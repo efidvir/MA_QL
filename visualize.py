@@ -20,7 +20,6 @@ class render():
 
     def last_1k_slots(self,data, number_of_agents):
         data = np.reshape(data, (10, 100))
-        print(data)
 
         # create discrete colormap
         viridis = cm.get_cmap('hsv', 256-2*int(256 / (number_of_agents+2)))
