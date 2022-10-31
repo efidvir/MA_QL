@@ -106,7 +106,7 @@ for i in range(number_of_agents):
 #plt.title('Reward function $r_1$')
 #plt.show(block=False)
 print(epsilon)
-print('r_1 array: ', env[0].r_1)
+#print('r_1 array: ', env[0].r_1)
 
 # data = np.zeros(env.data_size)
 errors = [[] for i in range(number_of_agents)]
@@ -257,8 +257,9 @@ for i in range(number_of_agents):
     print('\n')
 
     #draw.plot_Q_values(Q_tables,number_of_iterations)
-'''
+
 for i in range(number_of_agents):
     print('Agent ',i,' Q table:', agent[i].Q[:, :, :])
     draw.render_Q(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j, i, env[j].state)
     cv2.waitKey(0)
+'''
