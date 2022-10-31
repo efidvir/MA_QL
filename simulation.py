@@ -99,7 +99,6 @@ for i in range(number_of_agents):
     values[i] = agent[i].get_state_value(policies[i])
 # pol_t[0] = policies
 # val_t[0] = values
-
 # plot reward function in use
 #plt.plot(range(len(env[0].r_1)), env[0].r_1, 'o--', color='blue')
 #plt.xticks(range(env[0].max_silence_time))

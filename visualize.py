@@ -6,7 +6,6 @@ from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 import matplotlib.patches as mpatches
 import pygame
 import cv2
-import glob
 import os
 
 from itertools import cycle

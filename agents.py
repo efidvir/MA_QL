@@ -36,7 +36,7 @@ class Q_transmit_agent():
             action = np.argmax(self.Q[
                                    current_energy, slient_time])  # Take the action that has the highest predicted Q value (0, 1)
 
-        # Dont have energy for transmision#################################################
+        # Dont have energy for transmision################################################
         if current_energy < self.MINIMAL_CHARGE:
             action = 0
 

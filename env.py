@@ -41,7 +41,7 @@ class transmit_env(gym.Env):
 
     def time_step(self, action,transmit_or_wait, channel, ack, ):
         # take action accoring to policy (epsilon-greedy) and get reward and next state
-        #######################################################
+        ######################################################
         current_energy, silent_time = self.state
         reward = 0
         if ack:
