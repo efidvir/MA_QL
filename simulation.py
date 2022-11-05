@@ -127,40 +127,9 @@ for i in range(number_of_iterations):
         #print(new_state, reward, occupied )
         env[j].new_state = new_state
         score[j].append(reward)
-        ####################All agents make decisions (actions), the model looks at all actions and checks that only one choose to transmit, if so - reset time with ack?. Otherwise all collide, energy lost
-        '''
-        if occupied and action:
-          data = np.append(data, 3) #collision
-        elif occupied and (not action):
-          data = np.append(data,2) #avoided
-        elif action and (not occupied):
-          data = np.append(data,1) #Clean
-        else:
-          data = np.append(data,0) #wasted
-        data = np.delete(data, 0)
-        '''
-        ##############################################################################
-
-
-    for j in range(number_of_agents):
         np.random.seed(j)
-        #print('Agent ', j)
         actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, reward, actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j])
-        #print('Agent ', j, 'action', actions[j])
 
-        #print(actions[j], transmit_or_wait_s[j])
-        #policies[j] = agent[j].get_policy()
-        #values[j] = agent[j].get_state_value(policies[j])
-        #val_t[i, j] = agent[j].get_state_value(policies[j])
-        #pol_t[i, j] = agent[j].get_policy()
-    # pol_t.append(policies, axis=0)
-    # val_t.append(values, axis=0)
-    #if sum(transmit_or_wait_s) == 0:
-    #    print('wasted')
-    #elif sum(transmit_or_wait_s) == 1:
-    #    print('!!!!!!!!!!!!!!!!!!!!' , transmit_or_wait_s )
-    #else:
-        #print('XXXXX', transmit_or_wait_s )
     if i % 100 == 0:
         print('step: ', i, '100 steps AVG mean score: ',np.mean(score[0][-100:-1]),epsilon[0])
 
