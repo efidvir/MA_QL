@@ -15,28 +15,28 @@ class Q_transmit_agent():
         self.gamma = gamma
         self.data_size = data_size
         self.number_of_actions = number_of_actions
-        self.Q = np.zeros(shape=(battery_size, max_silence_time, self.number_of_actions))
-        self.state_visits = np.zeros(shape=(battery_size, max_silence_time))
-        self.error = np.zeros(shape=(battery_size, max_silence_time, self.number_of_actions))
+        self.Q = np.zeros(shape=(battery_size, max_silence_time, 3, self.number_of_actions))
+        self.state_visits = np.zeros(shape=(battery_size, max_silence_time, 3))
+        self.error = np.zeros(shape=(battery_size, max_silence_time,3, self.number_of_actions))
         self.MINIMAL_CHARGE = MINIMAL_CHARGE
         self.seeder = RAND
+        self.priority = 0
 
     def choose_action(self, state, epsilon):
         # decompose state
-        current_energy, slient_time = state
+        current_energy, slient_time, priority = state
 
         # Explore ?
         if np.random.default_rng().uniform(size=1)[0] < epsilon:
             np.random.seed(self.seeder[0]+int(time.time_ns()%1000000))
-            action = np.random.default_rng().choice([0,1],1,p=[0.85,0.15])
-            #action = np.random.randint(self.number_of_actions)
+            #action = np.random.default_rng().choice([0,1],1,p=[0.85,0.15])
+            action = np.random.randint(self.number_of_actions)
 
             #print('random action',np.random.uniform(size=1)[0] , epsilon)
 
         # Exploite - Choose the current best action
         else:
-            action = np.argmax(self.Q[
-                                   current_energy, slient_time])  # Take the action that has the highest predicted Q value (0, 1)
+            action = np.argmax(self.Q[current_energy, slient_time, priority])  # Take the action that has the highest predicted Q value (0, 1)
 
         # Dont have energy for transmision#################################################
         if current_energy < self.MINIMAL_CHARGE:
@@ -48,26 +48,26 @@ class Q_transmit_agent():
 
     def Q_learn(self, state, reward, action, new_state):
         # decompose state
-        current_energy, slient_time = state
+        current_energy, slient_time, priority = state
         # q_index = [current_energy,slient_time, action]
-        self.state_visits[current_energy, slient_time] += 1
-        delta = reward - self.Q[current_energy, slient_time, action]
+        #self.state_visits[current_energy, slient_time, priority] += 1
+        delta = reward - self.Q[current_energy, slient_time, priority, action]
 
         # decompose new state
-        next_energy, next_silence = new_state
+        next_energy, next_silence, next_priority = new_state
         # next_best_q_value_index = np.argmax(self.Q[next_energy, next_silence,:])
         # new_Q = reward + self.gamma*self.Q[next_energy, next_silence, next_best_q_value_index]
         # error = new_Q - self.Q[q_index]
         # self.Q[q_index] += self.alpha * error #################swap to alpha table
-        self.error[current_energy, slient_time, action] = reward + self.gamma * (
-            np.max(self.Q[next_energy, next_silence, :])) - self.Q[current_energy, slient_time, np.argmax(
-            self.Q[current_energy, slient_time, action])]
+        self.error[current_energy, slient_time, priority,  action] = reward + self.gamma * (
+            np.max(self.Q[next_energy, next_silence,next_priority :])) - self.Q[current_energy, slient_time, priority,  np.argmax(
+            self.Q[current_energy, slient_time, priority, action])]
 
-        delta = reward + self.gamma * (np.max(self.Q[next_energy, next_silence, :])) - self.Q[current_energy, slient_time, action]
+        delta = reward + self.gamma * (np.max(self.Q[next_energy, next_silence, next_priority, :])) - self.Q[current_energy, slient_time, priority, action]
         if delta >=0:
-            self.Q[current_energy, slient_time, action] = self.Q[current_energy, slient_time, action] + self.alpha * delta
+            self.Q[current_energy, slient_time,priority, action] = self.Q[current_energy, slient_time, priority, action] + self.alpha * delta
         else:
-            self.Q[current_energy, slient_time, action] = self.Q[current_energy, slient_time, action] + self.beta * delta
+            self.Q[current_energy, slient_time, priority, action] = self.Q[current_energy, slient_time, priority, action] + self.beta * delta
         #self.Q[current_energy, slient_time, action] = self.Q[current_energy, slient_time, action] + self.alpha * (
         #            reward + self.gamma * (np.max(self.Q[next_energy, next_silence, :])) - self.Q[
         #        current_energy, slient_time, action])
