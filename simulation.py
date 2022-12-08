@@ -40,25 +40,25 @@ draw = render()
 agent_type = 'Q_Learning'
 
 #Global parameters
-number_of_iterations = 1000000
+number_of_iterations = 100000
 force_policy_flag = True
-number_of_agents = 3
+number_of_agents = 5
 np.random.seed(0)
 
 #model
-MAX_SILENT_TIME = 6
+MAX_SILENT_TIME = 10
 SILENT_THRESHOLD = 1
-BATTERY_SIZE = 6
-DISCHARGE = 1
-MINIMAL_CHARGE = 1
+BATTERY_SIZE = 10
+DISCHARGE = 4
+MINIMAL_CHARGE = 4
 CHARGE = 1
 number_of_actions = 2
 
 #learning params
 GAMMA = 0.9
-ALPHA = 0.01
+ALPHA = 1
 #P_LOSS = 0
-decay_rate = 0.999995
+decay_rate = 0.99995
 
 #for rendering
 DATA_SIZE = 10
@@ -85,11 +85,12 @@ score = [[] for i in range(number_of_agents)]
 RAND = [[np.random.randint(10000)] for i in range(number_of_agents)]
 rewards = [[] for i in range(number_of_agents)]
 avg_rwrd = [[] for i in range(number_of_agents)]
+
 for i in range(number_of_agents):
     #epsilon[i] = epsilon[i] -1/(number_of_agents+i)
-    env[i] = transmit_env(BATTERY_SIZE, MAX_SILENT_TIME, SILENT_THRESHOLD, (1+i)*MINIMAL_CHARGE, (1+i)*DISCHARGE, CHARGE, DATA_SIZE, number_of_actions)
+    env[i] = transmit_env(BATTERY_SIZE, MAX_SILENT_TIME, SILENT_THRESHOLD, MINIMAL_CHARGE, DISCHARGE, CHARGE, DATA_SIZE, number_of_actions)
     if agent_type == 'Q_Learning':
-        agent[i] = Q_transmit_agent(ALPHA, GAMMA, BATTERY_SIZE, MAX_SILENT_TIME, DATA_SIZE, number_of_actions, (1+i)*MINIMAL_CHARGE,RAND[i])
+        agent[i] = Q_transmit_agent(ALPHA, GAMMA, BATTERY_SIZE, MAX_SILENT_TIME, DATA_SIZE, number_of_actions, MINIMAL_CHARGE,RAND[i])
         #Q_tables = [[] for i in range(number_of_iterations)]
     elif agent_type == 'Actor-Critic':
         agent[i] = AC_Agent(5*i*0.0000008, GAMMA, BATTERY_SIZE, MAX_SILENT_TIME, DATA_SIZE, number_of_actions,MINIMAL_CHARGE)
@@ -109,19 +110,14 @@ print(epsilon)
 print('r_1 array: ', env[0].r_1)
 
 errors = [[] for i in range(number_of_agents)]
-
+resolution = 1
+Qs = np.array([[np.array ([[agent[j].Q] for j in range(number_of_agents)])] for i in range(number_of_iterations)])
 for i in range(number_of_iterations):
+    Qs[i] = np.array ([[agent[j].Q] for j in range(number_of_agents)])
 
     # all agents move a step and take a new action
     for j in range(number_of_agents):
         env[j].state = env[j].new_state
-
-    if i % 200 == 0:
-        j = np.random.randint(number_of_agents)
-        current_energy, silent_time, priority = env[j].state
-        if priority < 2:
-            priority += 1
-        env[j].state = [current_energy, silent_time, priority]
 
     # Gateway decision
     if sum(transmit_or_wait_s) > 1 or sum(transmit_or_wait_s) == 0:
@@ -142,9 +138,10 @@ for i in range(number_of_iterations):
         #draw.render_Q_diffs(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j,i,env[j].state,actions[j], rewards[j], env[j].new_state)
         actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j])
         epsilon[j] = epsilon[j] * decay_rate
+    if i % 1000 == 0:
+        print('step: ', i, '100 steps AVG mean score: ',np.mean(score[0][-1000:-1]),epsilon[0])
 
-    if i % 100 == 0:
-        print('step: ', i, '100 steps AVG mean score: ',np.mean(score[0][-100:-1]),epsilon[0])
+draw.render_q_by_agent(Qs,number_of_agents)
 
 '''
 for j in range(number_of_agents):
@@ -165,28 +162,12 @@ data = []
 collisions = 0
 agent_clean = [np.zeros(1) for i in range(number_of_agents)]
 wasted = 0
-priority_time=[np.zeros(1) for i in range(number_of_agents)]
 num_of_eval_iner = 1000
 
-#reset priority
-for j in range(number_of_agents):
-    current_energy, silent_time, priority = env[j].state
-    env[j].state = [current_energy, silent_time, 0]
-
 for i in range(num_of_eval_iner):
+    #print(env[0].new_state,env[1].new_state,env[2].new_state)
     for a in range(number_of_agents):
         env[a].state = env[a].new_state
-        current_energy, silent_time, priority = env[a].state
-        print('agent', a , 'priority ', priority)
-
-    if i % 200 == 0:
-        j = 2#np.random.randint(number_of_agents)
-        current_energy, silent_time, priority = env[j].state
-        if priority < 2:
-            priority += 1
-        env[j].state = [current_energy, silent_time, priority]
-
-
     # Gateway decision
     if sum(transmit_or_wait_s) > 1 or sum(transmit_or_wait_s) == 0:
         ack = 0
@@ -204,31 +185,36 @@ for i in range(num_of_eval_iner):
     if sum(transmit_or_wait_s) == 0:
         wasted += 1
         data.append(0)
-    for a in range(number_of_agents):
-        new_state, reward, occupied = env[a].time_step(actions[a],transmit_or_wait_s[a], sum(transmit_or_wait_s), ack)  # CHANNEL
-        env[a].new_state = new_state
-        actions[a] ,transmit_or_wait_s[a] = agent[a].step(env[a].state, reward, actions[a],transmit_or_wait_s[a], env[a].new_state, epsilon[a])
 
-    for a in range(number_of_agents):
-        # decompose state
-        current_energy, slient_time, priority= env[a].state
-        if priority > 0:
-            priority_time[a] +=1
-        # decompose new state
-        next_energy, next_silence, next_priority= env[a].new_state
+    for j in range(number_of_agents):
+        new_state, reward, occupied = env[j].time_step(actions[j], transmit_or_wait_s[j], sum(transmit_or_wait_s), ack)  # CHANNEL
+        rewards[j] = reward
 
+        env[j].new_state = new_state
+
+    for j in range(number_of_agents):
+        np.random.seed(j)
+        #print('Agent ', j)
+        #draw.render_Q_diffs(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j,i,env[j].state,actions[j], rewards[j], env[j].new_state)
+        actions[j], transmit_or_wait_s[j] = agent[j].choose_action( env[j].new_state, 0)
+            #step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j])
+
+
+    #for a in range(number_of_agents):
+    #    new_state, reward, occupied = env[a].time_step(actions[a],transmit_or_wait_s[a], sum(transmit_or_wait_s), ack)  # CHANNEL
+    #    env[a].new_state = new_state
+    #    actions[a] ,transmit_or_wait_s[a] = agent[a].choose_action(env[a].new_state, 0)#step(env[a].state, reward, actions[a],transmit_or_wait_s[a], env[a].new_state, epsilon[a])
 print('collisions', collisions)
 for a in range(number_of_agents):
     print('agent{d}'.format(d=a), agent_clean[a] , 'rate:  ', env[a].discharge_rate)
     for i in range(int(len(score[a])/1000)):
-        avg_rwrd[a].appent(np.mean(score[a][1000*i:1000*(i+1)]))
+        avg_rwrd[a].append(np.mean(score[a][1000*i:1000*(i+1)]))
     plt.plot(range(len(avg_rwrd[a])), avg_rwrd[a])
-    plt.legend(range(number_of_agents))
-    plt.show(block=False)
+plt.legend(range(number_of_agents))
+plt.show()
 print('wasted', wasted)
 
-print('priority_time: ', priority_time)
-print(data)
+#print(data)
 draw.last_1k_slots(data, number_of_agents)
 '''
 for i in range(number_of_agents):

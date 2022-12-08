@@ -11,16 +11,18 @@ import os, sys, time
 class Q_transmit_agent():
     def __init__(self, alpha, gamma, battery_size, max_silence_time, data_size, number_of_actions,MINIMAL_CHARGE,RAND):
         self.alpha = alpha
-        self.beta = alpha/2
+        self.beta = alpha/10
         self.gamma = gamma
         self.data_size = data_size
+        self.idle_time = 1
         self.number_of_actions = number_of_actions
-        self.Q = np.zeros(shape=(battery_size, max_silence_time, 3, self.number_of_actions))
-        self.state_visits = np.zeros(shape=(battery_size, max_silence_time, 3))
-        self.error = np.zeros(shape=(battery_size, max_silence_time,3, self.number_of_actions))
+        self.Q = np.zeros(shape=(battery_size, max_silence_time, self.idle_time, self.number_of_actions))
+        self.state_visits = np.zeros(shape=(battery_size, max_silence_time, self.idle_time))
+        self.error = np.zeros(shape=(battery_size, max_silence_time,self.idle_time, self.number_of_actions))
         self.MINIMAL_CHARGE = MINIMAL_CHARGE
         self.seeder = RAND
         self.priority = 0
+
 
     def choose_action(self, state, epsilon):
         # decompose state
@@ -29,8 +31,8 @@ class Q_transmit_agent():
         # Explore ?
         if np.random.default_rng().uniform(size=1)[0] < epsilon:
             np.random.seed(self.seeder[0]+int(time.time_ns()%1000000))
-            #action = np.random.default_rng().choice([0,1],1,p=[0.85,0.15])
-            action = np.random.randint(self.number_of_actions)
+            action = np.random.default_rng().choice([0,1],1,p=[0.75,0.25])
+            #action = np.random.randint(self.number_of_actions)
 
             #print('random action',np.random.uniform(size=1)[0] , epsilon)
 
@@ -46,7 +48,7 @@ class Q_transmit_agent():
         transmit_or_wait = action #np.random.choice([1, 0], p=(transmit_prob, 1 - transmit_prob))
         return action, transmit_or_wait
 
-    def Q_learn(self, state, reward, action, new_state):
+    def Q_learn(self, state, reward, action, new_state): ##########RENAME priority
         # decompose state
         current_energy, slient_time, priority = state
         # q_index = [current_energy,slient_time, action]
@@ -60,7 +62,7 @@ class Q_transmit_agent():
         # error = new_Q - self.Q[q_index]
         # self.Q[q_index] += self.alpha * error #################swap to alpha table
         self.error[current_energy, slient_time, priority,  action] = reward + self.gamma * (
-            np.max(self.Q[next_energy, next_silence,next_priority :])) - self.Q[current_energy, slient_time, priority,  np.argmax(
+            np.max(self.Q[next_energy, next_silence,next_priority,:])) - self.Q[current_energy, slient_time, priority,  np.argmax(
             self.Q[current_energy, slient_time, priority, action])]
 
         delta = reward + self.gamma * (np.max(self.Q[next_energy, next_silence, next_priority, :])) - self.Q[current_energy, slient_time, priority, action]

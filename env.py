@@ -17,7 +17,8 @@ class transmit_env(gym.Env):
         self.discharge_rate = discharge_rate#np.random.randint(3, 6)*2#discharge_rate
         self.charge_rate = charge_rate
         self.data_size = data_size
-        self.priority = 2
+        self.max_idle_time = 1
+        self.initial_idle_time = 0
 
         # reward functions
         '''
@@ -32,10 +33,10 @@ class transmit_env(gym.Env):
         self.action_space = spaces.Discrete(action_space_size)
 
         # state space
-        self.state_space = spaces.Tuple((spaces.Discrete(self.max_silence_time), spaces.Discrete(self.battery_size), spaces.Discrete(self.priority)))
+        self.state_space = spaces.Tuple((spaces.Discrete(self.max_silence_time), spaces.Discrete(self.battery_size), spaces.Discrete(self.max_idle_time)))
         self.initial_energy = self.battery_size
         self.initial_silence = 0
-        self.initial_state = [self.initial_energy - 1, self.initial_silence,self.priority]
+        self.initial_state = [self.initial_energy - 1, self.initial_silence,self.initial_idle_time]
         self.state = self.initial_state
         self.new_state = self.initial_state
 
@@ -45,21 +46,19 @@ class transmit_env(gym.Env):
     def time_step(self, action,transmit_or_wait, channel, ack ):
         # take action accoring to policy (epsilon-greedy) and get reward and next state
         #######################################################
-        current_energy, silent_time, priority = self.state
+        current_energy, silent_time, idle_time = self.state
         reward = 0
 
         if ack:
             reward += 1
-        else:
-            if priority > 0:
-                reward -= 2*priority
 
         if transmit_or_wait == 1:  # agent choose to transmit and discharge
-
+            idle_time = 0
             if current_energy < self.minimal_charge:
                 raise ValueError('No charge left, can not transmit')
             else:
                 current_energy -= self.discharge_rate
+
 
             if channel > 1:  # Someone else transmited along with agent - collision
                 silent_time += 1
@@ -69,19 +68,20 @@ class transmit_env(gym.Env):
                   # Gateway responded!
                 if ack:
                     silent_time = 0
-                    if priority > 0:
-                        priority -= 1
                     #reward += 1
                 #else:
                 #    raise ValueError('Gateway not responding')
 
         else:  # agent choose to wait and charge
             if current_energy < self.battery_size - 1:  # capp battery
-
                 current_energy += self.charge_rate
+                idle_time = 0
+            else:
+                if idle_time < self.max_idle_time -1:
+                    idle_time += 1
             #silent_time += 1
             if ack:  # someone made a sucsessful report!
-                silent_time = 0
+                pass#silent_time = 0
             else:
                 silent_time += 1
 
@@ -90,7 +90,7 @@ class transmit_env(gym.Env):
 
         if channel == 0:
             occupied = 0
-            reward -= 1
+            #reward -= 1
         elif channel == 1 and action:
             occupied = 0
         else:
@@ -102,7 +102,7 @@ class transmit_env(gym.Env):
         #reward += self.get_reward(current_energy, silent_time)
 
         # compose new state
-        new_state = [current_energy, silent_time, priority]
+        new_state = [current_energy, silent_time, idle_time]
 
         return new_state, reward, occupied
 
