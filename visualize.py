@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.animation as ani
 import numpy as np
 from matplotlib import colors
 from matplotlib import cm
@@ -187,11 +188,12 @@ class render():
                 out.write(img)
         out.release()
 
-    def render_q_by_agent(selfself, Qs, number_of_agents):
+    def render_q_by_agent(self, Qs, number_of_agents):
         plt.rc('legend', fontsize=4)
         iterations = Qs.shape[0]
         time_diffs = [[] for i in range(iterations)]
         labels = []
+        lines = []
         fig2, axess = plt.subplots(number_of_agents , 1, figsize=(12, 5))
         for i in range(number_of_agents):
             for e in range(Qs.shape[4]):
@@ -201,7 +203,10 @@ class render():
                             time_diffs[j] = Qs[j][0][i][0][e][s][c][0] - Qs[j][0][i][0][e][s][c][1]
                         axess[i].plot(range(iterations),time_diffs,linewidth=1)
                         labels.append('state ({e} {s} {c})'.format(e=e, s = s, c=c))
-            axess[i].legend([labels])
+            axess[i].legend(labels, borderaxespad=0.)
+            print(labels)
+            labels = []
+        #animator = ani.FuncAnimation(fig, chartfunc, interval=100)
 
 #add legend
 
