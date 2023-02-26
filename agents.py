@@ -11,10 +11,10 @@ import os, sys, time
 class Q_transmit_agent():
     def __init__(self, alpha, gamma, battery_size, max_silence_time, data_size, number_of_actions,MINIMAL_CHARGE,RAND):
         self.alpha = alpha
-        self.beta = alpha/10
+        self.beta = alpha#/10
         self.gamma = gamma
         self.data_size = data_size
-        self.idle_time = 1
+        self.idle_time = 2
         self.number_of_actions = number_of_actions
         self.Q = np.zeros(shape=(battery_size, max_silence_time, self.idle_time, self.number_of_actions))
         self.state_visits = np.zeros(shape=(battery_size, max_silence_time, self.idle_time))
@@ -31,7 +31,7 @@ class Q_transmit_agent():
         # Explore ?
         if np.random.default_rng().uniform(size=1)[0] < epsilon:
             np.random.seed(self.seeder[0]+int(time.time_ns()%1000000))
-            action = np.random.default_rng().choice([0,1],1,p=[0.75,0.25])
+            action = np.random.default_rng().choice([0,1],1,p=[0.5,0.5])
             #action = np.random.randint(self.number_of_actions)
 
             #print('random action',np.random.uniform(size=1)[0] , epsilon)

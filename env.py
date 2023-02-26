@@ -17,7 +17,7 @@ class transmit_env(gym.Env):
         self.discharge_rate = discharge_rate#np.random.randint(3, 6)*2#discharge_rate
         self.charge_rate = charge_rate
         self.data_size = data_size
-        self.max_idle_time = 1
+        self.max_idle_time = 2
         self.initial_idle_time = 0
 
         # reward functions

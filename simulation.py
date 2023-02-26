@@ -56,7 +56,7 @@ number_of_actions = 2
 
 #learning params
 GAMMA = 0.9
-ALPHA = 1
+ALPHA = 0.1
 #P_LOSS = 0
 decay_rate = 0.99995
 
