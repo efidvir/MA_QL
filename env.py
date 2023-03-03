@@ -28,7 +28,7 @@ class transmit_env(gym.Env):
                                               self.max_silence_time + 1 - self.time_threshold + 1))
         '''
         self.r_1 = np.append(np.arange(self.time_threshold+1)**2,
-                            -1 * (np.arange(self.max_silence_time - self.time_threshold-1)**0.5)-1)
+                            -1 * (np.arange(self.max_silence_time - self.time_threshold-1)**0.25)-1)-1
         self.action_space_size = action_space_size
         self.action_space = spaces.Discrete(action_space_size)
 
@@ -51,6 +51,8 @@ class transmit_env(gym.Env):
 
         if ack:
             reward += 1
+        #else:
+            #reward += self.get_reward(current_energy, silent_time)
 
         if transmit_or_wait == 1:  # agent choose to transmit and discharge
             idle_time = 0
@@ -81,7 +83,7 @@ class transmit_env(gym.Env):
                     idle_time += 1
             #silent_time += 1
             if ack:  # someone made a sucsessful report!
-                pass#silent_time = 0
+                silent_time = 0
             else:
                 silent_time += 1
 
@@ -99,7 +101,7 @@ class transmit_env(gym.Env):
 
 
 
-        #reward += self.get_reward(current_energy, silent_time)
+
 
         # compose new state
         new_state = [current_energy, silent_time, idle_time]

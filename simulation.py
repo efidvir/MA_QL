@@ -40,17 +40,17 @@ draw = render()
 agent_type = 'Q_Learning'
 
 #Global parameters
-number_of_iterations = 100000
+number_of_iterations = 1000000
 force_policy_flag = True
-number_of_agents = 5
+number_of_agents = 10
 np.random.seed(0)
 
 #model
-MAX_SILENT_TIME = 10
-SILENT_THRESHOLD = 1
-BATTERY_SIZE = 10
-DISCHARGE = 4
-MINIMAL_CHARGE = 4
+MAX_SILENT_TIME = 20
+SILENT_THRESHOLD = 0
+BATTERY_SIZE = 20
+DISCHARGE = 9
+MINIMAL_CHARGE = 9
 CHARGE = 1
 number_of_actions = 2
 
@@ -58,7 +58,7 @@ number_of_actions = 2
 GAMMA = 0.9
 ALPHA = 0.1
 #P_LOSS = 0
-decay_rate = 0.99995
+decay_rate = 0.99999
 
 #for rendering
 DATA_SIZE = 10
@@ -85,7 +85,7 @@ score = [[] for i in range(number_of_agents)]
 RAND = [[np.random.randint(10000)] for i in range(number_of_agents)]
 rewards = [[] for i in range(number_of_agents)]
 avg_rwrd = [[] for i in range(number_of_agents)]
-
+r_max = 0
 for i in range(number_of_agents):
     #epsilon[i] = epsilon[i] -1/(number_of_agents+i)
     env[i] = transmit_env(BATTERY_SIZE, MAX_SILENT_TIME, SILENT_THRESHOLD, MINIMAL_CHARGE, DISCHARGE, CHARGE, DATA_SIZE, number_of_actions)
@@ -111,9 +111,9 @@ print('r_1 array: ', env[0].r_1)
 
 errors = [[] for i in range(number_of_agents)]
 resolution = 1
-Qs = np.array([[np.array ([[agent[j].Q] for j in range(number_of_agents)])] for i in range(number_of_iterations)])
+#Qs = np.array([[np.array ([[agent[j].Q] for j in range(number_of_agents)])] for i in range(number_of_iterations)])
 for i in range(number_of_iterations):
-    Qs[i] = np.array ([[agent[j].Q] for j in range(number_of_agents)])
+    #Qs[i] = np.array ([[agent[j].Q] for j in range(number_of_agents)])
 
     # all agents move a step and take a new action
     for j in range(number_of_agents):
@@ -140,8 +140,14 @@ for i in range(number_of_iterations):
         epsilon[j] = epsilon[j] * decay_rate
     if i % 1000 == 0:
         print('step: ', i, '100 steps AVG mean score: ',np.mean(score[0][-1000:-1]),epsilon[0])
+        if np.mean(score[0][-1000:-1]) > r_max:
+            r_max = np.mean(score[0][-1000:-1])
 
-draw.render_q_by_agent(Qs,number_of_agents)
+        if r_max == 1.0:
+            epsilon = np.zeros(number_of_agents)
+
+
+#draw.render_q_by_agent(Qs,number_of_agents)
 
 '''
 for j in range(number_of_agents):
