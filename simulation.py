@@ -42,23 +42,23 @@ agent_type = 'Q_Learning'
 #Global parameters
 number_of_iterations = 1000000
 force_policy_flag = True
-number_of_agents = 10
+number_of_agents = 9
 np.random.seed(0)
 
 #model
-MAX_SILENT_TIME = 20
+MAX_SILENT_TIME = 18
 SILENT_THRESHOLD = 0
-BATTERY_SIZE = 20
-DISCHARGE = 9
-MINIMAL_CHARGE = 9
+BATTERY_SIZE = 18
+DISCHARGE = 4
+MINIMAL_CHARGE = 4
 CHARGE = 1
 number_of_actions = 2
 
 #learning params
-GAMMA = 0.9
+GAMMA = 0.5
 ALPHA = 0.1
 #P_LOSS = 0
-decay_rate = 0.99999
+decay_rate = 0.999995
 
 #for rendering
 DATA_SIZE = 10
@@ -108,7 +108,7 @@ for i in range(number_of_agents):
 #plt.show(block=False)
 print(epsilon)
 print('r_1 array: ', env[0].r_1)
-
+bad_counter = np.zeros(number_of_agents)
 errors = [[] for i in range(number_of_agents)]
 resolution = 1
 #Qs = np.array([[np.array ([[agent[j].Q] for j in range(number_of_agents)])] for i in range(number_of_iterations)])
@@ -137,6 +137,14 @@ for i in range(number_of_iterations):
         #print('Agent ', j)
         #draw.render_Q_diffs(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j,i,env[j].state,actions[j], rewards[j], env[j].new_state)
         actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j])
+        '''
+        if epsilon[j] < 0.01:
+            if (rewards[j] == 0 and actions[j] == 1):
+                bad_counter[j] += 1
+                if bad_counter[j] > 1000:
+                    epsilon[j] += 0.1
+                    bad_counter[j] = 0
+        '''
         epsilon[j] = epsilon[j] * decay_rate
     if i % 1000 == 0:
         print('step: ', i, '100 steps AVG mean score: ',np.mean(score[0][-1000:-1]),epsilon[0])
