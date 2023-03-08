@@ -14,7 +14,7 @@ class Q_transmit_agent():
         self.beta = alpha
         self.gamma = gamma
         self.data_size = data_size
-        self.idle_time = 4
+        self.idle_time = 1
         self.number_of_actions = number_of_actions
         self.Q = np.zeros(shape=(battery_size, max_silence_time, self.idle_time, self.number_of_actions))
         self.state_visits = np.zeros(shape=(battery_size, max_silence_time, self.idle_time))

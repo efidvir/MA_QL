@@ -40,15 +40,15 @@ draw = render()
 agent_type = 'Q_Learning'
 
 #Global parameters
-number_of_iterations = 1000000
+number_of_iterations = 2000000
 force_policy_flag = True
-number_of_agents = 9
+number_of_agents = 10
 np.random.seed(0)
 
 #model
-MAX_SILENT_TIME = 18
+MAX_SILENT_TIME = 20
 SILENT_THRESHOLD = 0
-BATTERY_SIZE = 18
+BATTERY_SIZE = 20
 DISCHARGE = 4
 MINIMAL_CHARGE = 4
 CHARGE = 1
@@ -73,7 +73,7 @@ values = [[] for i in range(number_of_agents)]
 #val_t = np.ndarray(shape=(number_of_iterations, number_of_agents, BATTERY_SIZE, MAX_SILENT_TIME))
 
 occupied = 0
-epsilon = np.ones(number_of_agents)
+epsilon = np.ones(number_of_agents)*0.1
 print(epsilon)
 # initialize environment
 env = [[] for i in range(number_of_agents)]
@@ -153,6 +153,7 @@ for i in range(number_of_iterations):
 
         if r_max == 1.0:
             epsilon = np.zeros(number_of_agents)
+            break
 
 
 #draw.render_q_by_agent(Qs,number_of_agents)
@@ -176,8 +177,10 @@ data = []
 collisions = 0
 agent_clean = [np.zeros(1) for i in range(number_of_agents)]
 wasted = 0
-num_of_eval_iner = 1000
-
+num_of_eval_iner = 10000
+active =[]
+decay_rate = 0.999
+re_explore = False
 for i in range(num_of_eval_iner):
     #print(env[0].new_state,env[1].new_state,env[2].new_state)
     for a in range(number_of_agents):
@@ -203,16 +206,27 @@ for i in range(num_of_eval_iner):
     for j in range(number_of_agents):
         new_state, reward, occupied = env[j].time_step(actions[j], transmit_or_wait_s[j], sum(transmit_or_wait_s), ack)  # CHANNEL
         rewards[j] = reward
-
+        score[j].append(reward)
         env[j].new_state = new_state
 
     for j in range(number_of_agents):
         np.random.seed(j)
         #print('Agent ', j)
         #draw.render_Q_diffs(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j,i,env[j].state,actions[j], rewards[j], env[j].new_state)
-        actions[j], transmit_or_wait_s[j] = agent[j].choose_action( env[j].new_state, 0)
-            #step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j])
-
+        actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j])
+        if re_explore:
+            epsilon[j] = epsilon[j]*decay_rate
+        if i > 50:
+            if len(active) == 3:
+                for c in active:
+                    actions[c], transmit_or_wait_s[c] = 0, 0
+            else:
+                if actions[j] == 1:
+                    active.append(j)
+        if np.mean(score[0][-1000:-1]) < r_max and epsilon == np.zeros(number_of_agents):
+            epsilon = np.ones(number_of_agents)*0.1
+            re_explore = True
+            #r_max = np.mean(score[0][-1000:-1])
 
     #for a in range(number_of_agents):
     #    new_state, reward, occupied = env[a].time_step(actions[a],transmit_or_wait_s[a], sum(transmit_or_wait_s), ack)  # CHANNEL

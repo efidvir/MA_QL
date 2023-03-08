@@ -21,7 +21,7 @@ class render():
     #    plt. plot(range(len(policy),eee0, linewidth=1)
 
     def last_1k_slots(self,data, number_of_agents):
-        data = np.reshape(data, (10, 100))
+        data = np.reshape(data, (100, 100))
         #print(data)
 
         # create discrete colormap
