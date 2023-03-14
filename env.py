@@ -27,6 +27,7 @@ class transmit_env(gym.Env):
                              -1 * np.linspace(0, 2 * (self.max_silence_time - self.time_threshold),
                                               self.max_silence_time + 1 - self.time_threshold + 1))
         '''
+
         self.r_1 = np.append(np.arange(self.time_threshold+1)**2,
                             -1 * (np.arange(self.max_silence_time - self.time_threshold-1)**0.25)-1)-1
         self.action_space_size = action_space_size

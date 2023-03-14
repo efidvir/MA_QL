@@ -267,6 +267,7 @@ for i in range(number_of_agents):
     cv2.waitKey(0)
 '''
 
+
 #Create State transition table
 states = [[]for i in range(number_of_agents)]
 for a in range(number_of_agents):

@@ -206,6 +206,7 @@ class AC_Agent():
                 state_value[energy, time] = np.argmax(v.numpy()[0])
         return state_value
 
+
 class simple_AC_Agent():
     def __init__(self, alpha=0.0003, gamma=0.99, battery_size = 10, max_silence_time = 10, data_size = 1000, number_of_actions=2 ,MINIMAL_CHARGE = 0 ):
         self.gamma = gamma
