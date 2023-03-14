@@ -15,14 +15,14 @@ import os, sys
 import matplotlib.pyplot as plt
 #plt.rcParams["figure.dpi"] = 300
 from matplotlib import colors
-#import networkx as nx
-#from networkx.drawing.nx_agraph import write_dot
-#from networkx.drawing.nx_pydot import write_dot
+import networkx as nx
+from networkx.drawing.nx_agraph import write_dot
+from networkx.drawing.nx_pydot import write_dot
 
 #import pygame
-#from sklearn.preprocessing import normalize
+from sklearn.preprocessing import normalize
 #import graphviz
-#from graphviz import Source
+from graphviz import Source
 #np.set_printoptions(threshold=sys.maxsize)
 np.set_printoptions(edgeitems=30, linewidth=100000,
     formatter=dict(float=lambda x: "%.3g" % x))
@@ -49,13 +49,14 @@ np.random.seed(0)
 MAX_SILENT_TIME = 20
 SILENT_THRESHOLD = 0
 BATTERY_SIZE = 20
-DISCHARGE = 4
-MINIMAL_CHARGE = 4
+MAX_IDLE_TIME = 10
+DISCHARGE = 9
+MINIMAL_CHARGE = 9
 CHARGE = 1
 number_of_actions = 2
 
 #learning params
-GAMMA = 0.5
+GAMMA = 0.3
 ALPHA = 0.1
 #P_LOSS = 0
 decay_rate = 0.999995
@@ -64,16 +65,16 @@ decay_rate = 0.999995
 DATA_SIZE = 10
 
 '''run realtime experiences'''
-#T = [[] for i in range(number_of_agents)]
-#for i in range(number_of_agents):
-#    T[i] = np.zeros(shape=(BATTERY_SIZE * MAX_SILENT_TIME, MAX_SILENT_TIME * BATTERY_SIZE))  # transition matrix
+T = [[] for i in range(number_of_agents)]
+for i in range(number_of_agents):
+    T[i] = np.zeros(shape=(BATTERY_SIZE * MAX_SILENT_TIME * MAX_IDLE_TIME, MAX_SILENT_TIME * BATTERY_SIZE * MAX_IDLE_TIME))  # transition matrix
 policies = [[] for i in range(number_of_agents)]
 values = [[] for i in range(number_of_agents)]
 #pol_t = np.ndarray(shape=(number_of_iterations, number_of_agents, BATTERY_SIZE, MAX_SILENT_TIME))
 #val_t = np.ndarray(shape=(number_of_iterations, number_of_agents, BATTERY_SIZE, MAX_SILENT_TIME))
 
 occupied = 0
-epsilon = np.ones(number_of_agents)*0.1
+epsilon = np.ones(number_of_agents)*0.2
 print(epsilon)
 # initialize environment
 env = [[] for i in range(number_of_agents)]
@@ -88,9 +89,9 @@ avg_rwrd = [[] for i in range(number_of_agents)]
 r_max = 0
 for i in range(number_of_agents):
     #epsilon[i] = epsilon[i] -1/(number_of_agents+i)
-    env[i] = transmit_env(BATTERY_SIZE, MAX_SILENT_TIME, SILENT_THRESHOLD, MINIMAL_CHARGE, DISCHARGE, CHARGE, DATA_SIZE, number_of_actions)
+    env[i] = transmit_env(BATTERY_SIZE, MAX_SILENT_TIME, SILENT_THRESHOLD, MAX_IDLE_TIME, MINIMAL_CHARGE, DISCHARGE, CHARGE, DATA_SIZE, number_of_actions)
     if agent_type == 'Q_Learning':
-        agent[i] = Q_transmit_agent(ALPHA, GAMMA, BATTERY_SIZE, MAX_SILENT_TIME, DATA_SIZE, number_of_actions, MINIMAL_CHARGE,RAND[i])
+        agent[i] = Q_transmit_agent(ALPHA, GAMMA, BATTERY_SIZE, MAX_SILENT_TIME,MAX_IDLE_TIME, DATA_SIZE, number_of_actions, MINIMAL_CHARGE,RAND[i])
         #Q_tables = [[] for i in range(number_of_iterations)]
     elif agent_type == 'Actor-Critic':
         agent[i] = AC_Agent(5*i*0.0000008, GAMMA, BATTERY_SIZE, MAX_SILENT_TIME, DATA_SIZE, number_of_actions,MINIMAL_CHARGE)
@@ -153,7 +154,7 @@ for i in range(number_of_iterations):
 
         if r_max == 1.0:
             epsilon = np.zeros(number_of_agents)
-            break
+            #break
 
 
 #draw.render_q_by_agent(Qs,number_of_agents)
@@ -179,8 +180,9 @@ agent_clean = [np.zeros(1) for i in range(number_of_agents)]
 wasted = 0
 num_of_eval_iner = 10000
 active =[]
-decay_rate = 0.999
+decay_rate = 0.9999
 re_explore = False
+
 for i in range(num_of_eval_iner):
     #print(env[0].new_state,env[1].new_state,env[2].new_state)
     for a in range(number_of_agents):
@@ -216,17 +218,25 @@ for i in range(num_of_eval_iner):
         actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j])
         if re_explore:
             epsilon[j] = epsilon[j]*decay_rate
-        if i > 50:
+        if i > 1000000:
             if len(active) == 3:
                 for c in active:
                     actions[c], transmit_or_wait_s[c] = 0, 0
             else:
                 if actions[j] == 1:
                     active.append(j)
-        if np.mean(score[0][-1000:-1]) < r_max and epsilon == np.zeros(number_of_agents):
-            epsilon = np.ones(number_of_agents)*0.1
+        if np.mean(score[0][-1000:-1]) < r_max and epsilon[0] == 0:
+            epsilon = np.ones(number_of_agents)*0.01
             re_explore = True
             #r_max = np.mean(score[0][-1000:-1])
+    # collect state transitions in T
+    for j in range(number_of_agents):
+        # decompose state
+        current_energy, slient_time, idle_time= env[j].state
+        # decompose new state
+        next_energy, next_silence, next_idle_time = env[j].new_state
+        # print(current_energy, slient_time,'->',next_energy, next_silence , '~~~', current_energy*(BATTERY_SIZE-1)+slient_time, next_energy*(BATTERY_SIZE-1)+next_silence)
+        T[j][current_energy * (BATTERY_SIZE) + slient_time * (MAX_SILENT_TIME) + idle_time, next_energy * (BATTERY_SIZE) + next_silence * (MAX_SILENT_TIME) + next_idle_time] += 1
 
     #for a in range(number_of_agents):
     #    new_state, reward, occupied = env[a].time_step(actions[a],transmit_or_wait_s[a], sum(transmit_or_wait_s), ack)  # CHANNEL
@@ -256,3 +266,44 @@ for i in range(number_of_agents):
     draw.render_Q(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j, i, env[j].state)
     cv2.waitKey(0)
 '''
+
+#Create State transition table
+states = [[]for i in range(number_of_agents)]
+for a in range(number_of_agents):
+    for i in range(agent[a].Q.shape[0]):
+        for j in range(agent[a].Q.shape[1]):
+            for k in range(agent[a].Q.shape[2]):
+                states[a].append((i,j,k))
+
+#Create state machine graph for each agent
+G = [[]for i in range(number_of_agents)]
+labels = [{}for i in range(number_of_agents)]
+edge_labels = [{}for i in range(number_of_agents)]
+
+for a in range(number_of_agents):
+  G[a] = nx.MultiDiGraph()
+  labels={}
+  edge_labels={}
+
+#draw draphs
+for a in range(number_of_agents):
+  for i, origin_state in enumerate(states[a]):
+      for j, destination_state in enumerate(states[a]):
+          rate = normalize(T[a], axis=1, norm='l1')[i][j]
+          if rate > 0:
+              G[a].add_edge(origin_state,
+                        destination_state,
+                        weight=rate,
+                        label="{:.02f}, {d}".format(rate, d =T[a][i][j]))
+              edge_labels[(origin_state, destination_state)] = label="{:.02f}, {d}".format(rate, d =T[a][i][j])
+
+
+  plt.figure(figsize=(28,14))
+  node_size = 200
+  pos = {state:list(state) for state in states[a]}
+  nx.draw_networkx_edges(G[a],pos,width=1.0,alpha=0.5)
+  nx.draw_networkx_labels(G[a], pos, font_weight=2)
+  nx.draw_networkx_edge_labels(G[a], pos, edge_labels)
+  plt.title('(energy, silent time)')
+  plt.axis('off');
+  write_dot(G[a], "mc_agent{d}.dot".format(d =a))

@@ -5,7 +5,7 @@ import numpy as np
 class transmit_env(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, battery_size, max_silence_time, time_threshold, minimal_charge, discharge_rate, charge_rate,
+    def __init__(self, battery_size, max_silence_time, time_threshold, max_idel_time, minimal_charge, discharge_rate, charge_rate,
                  data_size,action_space_size):
         super(transmit_env, self).__init__()
 
@@ -17,7 +17,7 @@ class transmit_env(gym.Env):
         self.discharge_rate = discharge_rate#np.random.randint(3, 6)*2#discharge_rate
         self.charge_rate = charge_rate
         self.data_size = data_size
-        self.max_idle_time = 1
+        self.max_idle_time = max_idel_time
         self.initial_idle_time = 0
 
         # reward functions

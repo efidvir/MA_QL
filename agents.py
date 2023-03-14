@@ -9,16 +9,16 @@ import os, sys, time
 
 
 class Q_transmit_agent():
-    def __init__(self, alpha, gamma, battery_size, max_silence_time, data_size, number_of_actions,MINIMAL_CHARGE,RAND):
+    def __init__(self, alpha, gamma, battery_size, max_silence_time, max_idle_time, data_size, number_of_actions,MINIMAL_CHARGE,RAND):
         self.alpha = alpha
         self.beta = alpha
         self.gamma = gamma
         self.data_size = data_size
-        self.idle_time = 1
+        self.idle_time = max_idle_time
         self.number_of_actions = number_of_actions
-        self.Q = np.zeros(shape=(battery_size, max_silence_time, self.idle_time, self.number_of_actions))
-        self.state_visits = np.zeros(shape=(battery_size, max_silence_time, self.idle_time))
-        self.error = np.zeros(shape=(battery_size, max_silence_time,self.idle_time, self.number_of_actions))
+        self.Q = np.zeros(shape=(battery_size, max_silence_time, max_idle_time, number_of_actions))
+        self.state_visits = np.zeros(shape=(battery_size, max_silence_time, max_idle_time))
+        self.error = np.zeros(shape=(battery_size, max_silence_time,max_idle_time, number_of_actions))
         self.MINIMAL_CHARGE = MINIMAL_CHARGE
         self.seeder = RAND
         self.priority = 0
