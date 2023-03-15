@@ -2,7 +2,8 @@
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
+import os
+os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz/bin/'
 import numpy as np
 import gym
 from gym import spaces
@@ -56,7 +57,7 @@ CHARGE = 1
 number_of_actions = 2
 
 #learning params
-GAMMA = 0.3
+GAMMA = 0.5
 ALPHA = 0.1
 #P_LOSS = 0
 decay_rate = 0.999995
@@ -178,7 +179,7 @@ data = []
 collisions = 0
 agent_clean = [np.zeros(1) for i in range(number_of_agents)]
 wasted = 0
-num_of_eval_iner = 10000
+num_of_eval_iner = 1000
 active =[]
 decay_rate = 0.9999
 re_explore = False
@@ -301,10 +302,13 @@ for a in range(number_of_agents):
 
   plt.figure(figsize=(28,14))
   node_size = 200
-  pos = {state:list(state) for state in states[a]}
+  pos = {state:list((state[0],state[1]*state[2]+state[2])) for state in states[a]}
   nx.draw_networkx_edges(G[a],pos,width=1.0,alpha=0.5)
   nx.draw_networkx_labels(G[a], pos, font_weight=2)
   nx.draw_networkx_edge_labels(G[a], pos, edge_labels)
   plt.title('(energy, silent time)')
   plt.axis('off');
-  write_dot(G[a], "mc_agent{d}.dot".format(d =a))
+  write_dot(G[a], "graph_agent_{d}".format(d =a))
+for a in range(number_of_agents):
+    s = Source.from_file("graph_agent_{d}".format(d=a))
+    s.view()
