@@ -216,6 +216,10 @@ for i in range(num_of_eval_iner):
         np.random.seed(j)
         #print('Agent ', j)
         #draw.render_Q_diffs(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j,i,env[j].state,actions[j], rewards[j], env[j].new_state)
+        if i == 10:
+            epsilon[0] = 1
+        if i > 12:
+            epsilon[0] = 0
         actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j])
         if re_explore:
             epsilon[j] = epsilon[j]*decay_rate
@@ -226,9 +230,9 @@ for i in range(num_of_eval_iner):
             else:
                 if actions[j] == 1:
                     active.append(j)
-        if np.mean(score[0][-1000:-1]) < r_max and epsilon[0] == 0:
-            epsilon = np.ones(number_of_agents)*0.01
-            re_explore = True
+        #if np.mean(score[0][-1000:-1]) < r_max and epsilon[0] == 0:
+        #    epsilon = np.ones(number_of_agents)*0.01
+        #    re_explore = True
             #r_max = np.mean(score[0][-1000:-1])
     # collect state transitions in T
     for j in range(number_of_agents):
@@ -289,26 +293,27 @@ for a in range(number_of_agents):
 
 #draw draphs
 for a in range(number_of_agents):
-  for i, origin_state in enumerate(states[a]):
-      for j, destination_state in enumerate(states[a]):
-          rate = normalize(T[a], axis=1, norm='l1')[i][j]
-          if rate > 0:
-              G[a].add_edge(origin_state,
-                        destination_state,
-                        weight=rate,
-                        label="{:.02f}, {d}".format(rate, d =T[a][i][j]))
-              edge_labels[(origin_state, destination_state)] = label="{:.02f}, {d}".format(rate, d =T[a][i][j])
+    normalizedT = normalize(T[a], axis=1, norm='l1')
+    for i, origin_state in enumerate(states[a]):
+        for j, destination_state in enumerate(states[a]):
+            rate = normalizedT[i][j]
+            if rate > 0:
+                G[a].add_edge(origin_state,
+                              destination_state,
+                              weight=rate,
+                              label="{:.02f}, {d}".format(rate, d =T[a][i][j]))
+                edge_labels[(origin_state, destination_state)] = label="{:.02f}, {d}".format(rate, d =T[a][i][j])
 
 
-  plt.figure(figsize=(28,14))
-  node_size = 200
-  pos = {state:list((state[0],state[1]*state[2]+state[2])) for state in states[a]}
-  nx.draw_networkx_edges(G[a],pos,width=1.0,alpha=0.5)
-  nx.draw_networkx_labels(G[a], pos, font_weight=2)
-  nx.draw_networkx_edge_labels(G[a], pos, edge_labels)
-  plt.title('(energy, silent time)')
-  plt.axis('off');
-  write_dot(G[a], "graph_agent_{d}".format(d =a))
+    plt.figure(figsize=(28,14))
+    node_size = 200
+    pos = {state:list((state[0],state[1]*state[2]+state[2])) for state in states[a]}
+    nx.draw_networkx_edges(G[a],pos,width=1.0,alpha=0.5)
+    nx.draw_networkx_labels(G[a], pos, font_weight=2)
+    nx.draw_networkx_edge_labels(G[a], pos, edge_labels)
+    plt.title('(energy, silent time)')
+    plt.axis('off');
+    write_dot(G[a], "graph_agent_{d}".format(d =a))
 for a in range(number_of_agents):
     s = Source.from_file("graph_agent_{d}".format(d=a))
     s.view()
