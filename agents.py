@@ -31,7 +31,7 @@ class Q_transmit_agent():
         # Explore ?
         if np.random.default_rng().uniform(size=1)[0] < epsilon:
             np.random.seed(self.seeder[0]+int(time.time_ns()%1000000))
-            action = np.random.default_rng().choice([0,1],1,p=[0.9,0.1])
+            action = np.random.default_rng().choice([0,1],1,p=[0.5,0.5])
             #action = np.random.randint(self.number_of_actions)
 
             #print('random action',np.random.uniform(size=1)[0] , epsilon)

@@ -41,7 +41,7 @@ draw = render()
 agent_type = 'Q_Learning'
 
 #Global parameters
-number_of_iterations = 2000000
+number_of_iterations = 1000000
 force_policy_flag = True
 number_of_agents = 10
 np.random.seed(0)
@@ -50,17 +50,17 @@ np.random.seed(0)
 MAX_SILENT_TIME = 20
 SILENT_THRESHOLD = 0
 BATTERY_SIZE = 20
-MAX_IDLE_TIME = 10
+MAX_IDLE_TIME = 20
 DISCHARGE = 9
 MINIMAL_CHARGE = 9
 CHARGE = 1
 number_of_actions = 2
 
 #learning params
-GAMMA = 0.5
+GAMMA = 0.9
 ALPHA = 0.1
 #P_LOSS = 0
-decay_rate = 0.999995
+decay_rate = 0.99999
 
 #for rendering
 DATA_SIZE = 10
@@ -75,7 +75,7 @@ values = [[] for i in range(number_of_agents)]
 #val_t = np.ndarray(shape=(number_of_iterations, number_of_agents, BATTERY_SIZE, MAX_SILENT_TIME))
 
 occupied = 0
-epsilon = np.ones(number_of_agents)*0.2
+epsilon = np.ones(number_of_agents)*0.5
 print(epsilon)
 # initialize environment
 env = [[] for i in range(number_of_agents)]
@@ -153,8 +153,8 @@ for i in range(number_of_iterations):
         if np.mean(score[0][-1000:-1]) > r_max:
             r_max = np.mean(score[0][-1000:-1])
 
-        if r_max == 1.0:
-            epsilon = np.zeros(number_of_agents)
+        #if r_max == 1.0:
+        #    epsilon = np.zeros(number_of_agents)
             #break
 
 
@@ -218,9 +218,10 @@ for i in range(num_of_eval_iner):
         #draw.render_Q_diffs(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j,i,env[j].state,actions[j], rewards[j], env[j].new_state)
         if i == 10:
             epsilon[0] = 1
-        if i > 12:
+        if i > 20:
             epsilon[0] = 0
         actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j])
+        '''
         if re_explore:
             epsilon[j] = epsilon[j]*decay_rate
         if i > 1000000:
@@ -234,6 +235,7 @@ for i in range(num_of_eval_iner):
         #    epsilon = np.ones(number_of_agents)*0.01
         #    re_explore = True
             #r_max = np.mean(score[0][-1000:-1])
+        '''
     # collect state transitions in T
     for j in range(number_of_agents):
         # decompose state
