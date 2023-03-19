@@ -210,3 +210,53 @@ class render():
 
 #add legend
 
+    def draw_state_transition_graph(self, T, agent):
+        print('Drawing state machine graphs for all agents (at evaluation)')
+        import networkx as nx
+        from networkx.drawing.nx_pydot import write_dot
+        from sklearn.preprocessing import normalize
+        from graphviz import Source
+        number_of_agents = len(agent)
+        # Create State transition table
+        states = [[] for i in range(number_of_agents)]
+        for a in range(number_of_agents):
+            for i in range(agent[a].Q.shape[0]):
+                for j in range(agent[a].Q.shape[1]):
+                    for k in range(agent[a].Q.shape[2]):
+                        states[a].append((i, j, k))
+
+        # Create state machine graph for each agent
+        G = [[] for i in range(number_of_agents)]
+        labels = [{} for i in range(number_of_agents)]
+        edge_labels = [{} for i in range(number_of_agents)]
+
+        for a in range(number_of_agents):
+            G[a] = nx.MultiDiGraph()
+            labels = {}
+            edge_labels = {}
+
+        # draw draphs
+        for a in range(number_of_agents):
+            for i, origin_state in enumerate(states[a]):
+                for j, destination_state in enumerate(states[a]):
+                    rate = normalize(T[a], axis=1, norm='l1')[i][j]
+                    if rate > 0:
+                        G[a].add_edge(origin_state,
+                                      destination_state,
+                                      weight=rate,
+                                      label="{:.02f}, {d}".format(rate, d=T[a][i][j]))
+                        edge_labels[(origin_state, destination_state)] = label = "{:.02f}, {d}".format(rate,
+                                                                                                       d=T[a][i][j])
+
+            plt.figure(figsize=(28, 14))
+            node_size = 200
+            pos = {state: list((state[0], state[1] * state[2] + state[2])) for state in states[a]}
+            nx.draw_networkx_edges(G[a], pos, width=1.0, alpha=0.5)
+            nx.draw_networkx_labels(G[a], pos, font_weight=2)
+            nx.draw_networkx_edge_labels(G[a], pos, edge_labels)
+            plt.title('(energy, silent time)')
+            plt.axis('off');
+            write_dot(G[a], "graph_agent_{d}".format(d=a))
+        for a in range(number_of_agents):
+            s = Source.from_file("graph_agent_{d}".format(d=a))
+            s.view()
