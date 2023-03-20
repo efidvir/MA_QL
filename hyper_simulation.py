@@ -119,7 +119,7 @@ def run_simulation(number_of_iterations,decay_rate, number_of_agents,force_polic
     #plt.xticks(range(env[0].max_silence_time))
     #plt.title('Reward function $r_1$')
     #plt.show(block=False)
-    print(epsilon)
+    print('Final epsilon values:  ', epsilon)
     print('r_1 array: ', env[0].r_1)
     bad_counter = np.zeros(number_of_agents)
     errors = [[] for i in range(number_of_agents)]
@@ -191,18 +191,49 @@ def make_pool_parameters(iter):
 
 hyper_sim_args = make_pool_parameters(alphas)
 
+
+#create a matrix for each of the tuned hyperparameter value
+mat = [[] for i in range(len(hyper_sim_args))]
+max_mat = [[] for i in range(len(hyper_sim_args))]
+min_mat = [[] for i in range(len(hyper_sim_args))]
+avg_mat =  [[] for i in range(len(hyper_sim_args))]
+#for sims in range(len(hyper_sim_args)):
+avg_num=10
 if __name__ == '__main__':
     mp.freeze_support()
-    with Pool() as pool:
-        for results in pool.starmap(run_simulation , hyper_sim_args):
-            score, T = results
-            avg_rwrd = [[] for i in range(number_of_agents)]
-            for a in range(number_of_agents):
-                for i in range(int(len(score[a]) / 1000)):
-                    avg_rwrd[a].append(np.mean(score[a][1000 * i:1000 * (i + 1)]))
-                plt.plot(range(len(avg_rwrd[a])), avg_rwrd[a])
-            plt.legend(range(number_of_agents))
-            plt.show()
+    for var in range(avg_num):
+        with Pool() as pool:
+            for index, results in enumerate(pool.starmap(run_simulation, hyper_sim_args)):
+                score, T = results
+                avg_rwrd = [[] for i in range(number_of_agents)]
+                for a in range(number_of_agents):
+                    for i in range(int(len(score[a]) / 1000)):
+                        avg_rwrd[a].append(np.mean(score[a][1000 * i:1000 * (i + 1)]))
+
+                if mat[index] == []:
+                    mat[index] = np.array(avg_rwrd[0])
+                    #max_mat[index] = np.array(avg_rwrd[0])
+                    #min_mat[index] = np.array(avg_rwrd[0])
+                    #avg_mat[index] = np.array(avg_rwrd[0])
+                else:
+                    # print(mat.shape(),avg_rwrd.shape())
+                    mat[index] = np.vstack((mat[index], np.array(avg_rwrd[0])))
+
+        print('AVG #',var, '-----------------------------')
+    for tmp in range(len(mat)):
+        mat[tmp] = np.delete(mat[tmp], 0, axis=0)
+        #max_mat[tmp] = np.delete(max_mat[tmp], 0, axis=0)
+        #min_mat[tmp] = np.delete(min_mat[tmp], 0, axis=0)
+        #avg_mat[tmp] = np.delete(avg_mat[tmp], 0, axis=0)
+    for i in range(len(hyper_sim_args)):
+        max_mat[i] = np.amax(mat[i], axis=0)
+        min_mat[i] = np.amin(mat[i], axis=0)
+        avg_mat[i] = np.average(mat[i], axis=0)
+
+
+    plt.plot(range(len(avg_mat[0])), avg_mat[0])
+    plt.legend(range(number_of_agents))
+    plt.show()
 #avg_rwrd, score, T, agent =
 '''
 #Agent evaluation
