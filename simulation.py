@@ -33,7 +33,7 @@ draw = render()
 agent_type = 'Q_Learning'
 
 #Global parameters
-number_of_iterations = 1000
+number_of_iterations = 1000000
 force_policy_flag = True
 number_of_agents = 3
 np.random.seed(0)
@@ -52,19 +52,19 @@ number_of_actions = 2
 GAMMA = 0.9
 ALPHA = 0.1
 #P_LOSS = 0
-decay_rate = 0.99
+decay_rate = 0.99999
 
 #for rendering
 DATA_SIZE = 10
 
 #visualizationd flags
-state_transition_graph = True
-evaluation_slots = True
+state_transition_graph = False
+evaluation_slots = False
 '''run realtime experiences'''
 if state_transition_graph:
     T = [[] for i in range(number_of_agents)]
-for i in range(number_of_agents):
-    T[i] = np.zeros(shape=(BATTERY_SIZE * MAX_SILENT_TIME * MAX_IDLE_TIME, MAX_SILENT_TIME * BATTERY_SIZE * MAX_IDLE_TIME))  # transition matrix
+    for i in range(number_of_agents):
+        T[i] = np.zeros(shape=(BATTERY_SIZE * MAX_SILENT_TIME * MAX_IDLE_TIME, MAX_SILENT_TIME * BATTERY_SIZE * MAX_IDLE_TIME))  # transition matrix
 policies = [[] for i in range(number_of_agents)]
 values = [[] for i in range(number_of_agents)]
 #pol_t = np.ndarray(shape=(number_of_iterations, number_of_agents, BATTERY_SIZE, MAX_SILENT_TIME))
