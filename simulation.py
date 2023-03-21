@@ -47,7 +47,7 @@ DISCHARGE = 2
 MINIMAL_CHARGE = 2
 CHARGE = 1
 number_of_actions = 2
-
+p = 0.9
 #learning params
 GAMMA = 0.9
 ALPHA = 0.1
@@ -94,7 +94,7 @@ for i in range(number_of_agents):
         agent[i] = AC_Agent(5*i*0.0000008, GAMMA, BATTERY_SIZE, MAX_SILENT_TIME, DATA_SIZE, number_of_actions,MINIMAL_CHARGE)
         print('Make sure to adjust the learning rate')
     state[i] = env[i].initial_state
-    actions[i] , transmit_or_wait_s[i] = agent[i].choose_action(state[i], epsilon[i])
+    actions[i] , transmit_or_wait_s[i] = agent[i].choose_action(state[i], epsilon[i],p)
     #policies[i] = agent[i].get_policy()
     #values[i] = agent[i].get_state_value(policies[i])
 
@@ -134,7 +134,7 @@ for i in range(number_of_iterations):
         np.random.seed(j)
         #print('Agent ', j)
         #draw.render_Q_diffs(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j,i,env[j].state,actions[j], rewards[j], env[j].new_state)
-        actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j])
+        actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j],p)
         '''
         if epsilon[j] < 0.01:
             if (rewards[j] == 0 and actions[j] == 1):
@@ -216,7 +216,7 @@ for i in range(num_of_eval_iner):
             epsilon[0] = 1
         if i > 20:
             epsilon[0] = 0
-        actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j])
+        actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j],p)
         '''
         if re_explore:
             epsilon[j] = epsilon[j]*decay_rate
