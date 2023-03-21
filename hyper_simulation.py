@@ -3,12 +3,13 @@ from multiprocessing import Process, Pool
 import os
 os.environ["PATH"] += os.pathsep + 'C:/Program Files (x86)/Graphviz/bin/'
 import numpy as np
+import pickle
 import gym
 from gym import spaces
 import cv2
 #from google.colab.patches import cv2_imshow
 #from google.colab import output
-#import time
+import time
 import os, sys
 #os.environ["SDL_VIDEODRIVER"] = "dummy"
 import matplotlib.pyplot as plt
@@ -33,26 +34,26 @@ agent_type = 'Q_Learning'
 
 
 #Global parameters
-number_of_iterations = 100000
-number_of_agents = 3
+number_of_iterations = 1000000
+number_of_agents = 20
 np.random.seed(0)
 force_policy_flag = True
 #model
-MAX_SILENT_TIME = 6
+MAX_SILENT_TIME = 40
 SILENT_THRESHOLD = 0
-BATTERY_SIZE = 6
-MAX_IDLE_TIME = 6
-DISCHARGE = 2
-MINIMAL_CHARGE = 2
+BATTERY_SIZE = 40
+MAX_IDLE_TIME = 20
+DISCHARGE = 19
+MINIMAL_CHARGE = 19
 CHARGE = 1
 number_of_actions = 2
 
 #learning params
 GAMMA = 0.9
 ALPHA = 0.1
-alphas = [0.1,0.2,0.3,0.4]
+alphas = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
 #P_LOSS = 0
-decay_rate = 0.9999
+decay_rate = 0.99999
 
 #for rendering
 DATA_SIZE = 10
@@ -97,7 +98,7 @@ def run_simulation(number_of_iterations,decay_rate, number_of_agents,force_polic
     score = [[] for i in range(number_of_agents)]
     RAND = [[np.random.randint(10000)] for i in range(number_of_agents)]
     rewards = [[] for i in range(number_of_agents)]
-
+    avg_rwrd = [[] for i in range(number_of_agents)]
     r_max = 0
     for i in range(number_of_agents):
         #epsilon[i] = epsilon[i] -1/(number_of_agents+i)
@@ -180,7 +181,10 @@ def run_simulation(number_of_iterations,decay_rate, number_of_agents,force_polic
     print(epsilon)
     # plt.plot(errors)
     #video.release()
-    return score, T
+    for a in range(number_of_agents):
+        for i in range(int(len(score[a]) / 1000)):
+            avg_rwrd[a].append(np.mean(score[a][1000 * i:1000 * (i + 1)]))
+    return avg_rwrd, T
 
 
 def make_pool_parameters(iter):
@@ -204,24 +208,22 @@ if __name__ == '__main__':
     for var in range(avg_num):
         with Pool() as pool:
             for index, results in enumerate(pool.starmap(run_simulation, hyper_sim_args)):
-                score, T = results
-                avg_rwrd = [[] for i in range(number_of_agents)]
-                for a in range(number_of_agents):
-                    for i in range(int(len(score[a]) / 1000)):
-                        avg_rwrd[a].append(np.mean(score[a][1000 * i:1000 * (i + 1)]))
+                avg_rwrd, T = results
 
-                if mat[index] == []:
+                if len(mat[index]) == 0:
                     mat[index] = np.array(avg_rwrd[0])
                     #max_mat[index] = np.array(avg_rwrd[0])
                     #min_mat[index] = np.array(avg_rwrd[0])
                     #avg_mat[index] = np.array(avg_rwrd[0])
                 else:
-                    # print(mat.shape(),avg_rwrd.shape())
                     mat[index] = np.vstack((mat[index], np.array(avg_rwrd[0])))
+                    # print(mat.shape(),avg_rwrd.shape())
+
 
         print('AVG #',var, '-----------------------------')
-    for tmp in range(len(mat)):
-        mat[tmp] = np.delete(mat[tmp], 0, axis=0)
+
+    #for tmp in range(len(hyper_sim_args)):
+    #    mat[tmp] = np.delete(mat[tmp], 0, axis=0)
         #max_mat[tmp] = np.delete(max_mat[tmp], 0, axis=0)
         #min_mat[tmp] = np.delete(min_mat[tmp], 0, axis=0)
         #avg_mat[tmp] = np.delete(avg_mat[tmp], 0, axis=0)
@@ -229,11 +231,20 @@ if __name__ == '__main__':
         max_mat[i] = np.amax(mat[i], axis=0)
         min_mat[i] = np.amin(mat[i], axis=0)
         avg_mat[i] = np.average(mat[i], axis=0)
-
-
-    plt.plot(range(len(avg_mat[0])), avg_mat[0])
-    plt.legend(range(number_of_agents))
+#surface_mat0 = np.vstack(avg_mat, axis=1)
+    print(np.array(avg_mat).shape)
+    X,Y = np.meshgrid(range(int(number_of_iterations/1000)),alphas)
+    fig, ax = plt.subplots()
+    ax = plt.axes(projection='3d')
+    ax.plot_surface(X, Y, np.array(avg_mat), alpha=0.3, label='p')
+    ax.set_zlabel('Average reward')
+    ax.set_ylabel('Learning rate')
+    ax.set_xlabel('Number of iterations X1000')
+    #plt.plot(range(len(avg_mat[0])), avg_mat[0])
+    #plt.legend(range(number_of_agents))
     plt.show()
+
+    pickle.dump(ax, open('FigureObject_test.fig.pickle', 'wb'))
 #avg_rwrd, score, T, agent =
 '''
 #Agent evaluation
