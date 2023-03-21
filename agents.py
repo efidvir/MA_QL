@@ -24,14 +24,14 @@ class Q_transmit_agent():
         self.priority = 0
 
 
-    def choose_action(self, state, epsilon):
+    def choose_action(self, state, epsilon,p):
         # decompose state
         current_energy, slient_time, priority = state
 
         # Explore ?
         if np.random.default_rng().uniform(size=1)[0] < epsilon:
             np.random.seed(self.seeder[0]+int(time.time_ns()%1000000))
-            action = np.random.default_rng().choice([0,1],1,p=[0.5,0.5])
+            action = np.random.default_rng().choice([0,1],1,p=[p,1-p])
             #action = np.random.randint(self.number_of_actions)
 
             #print('random action',np.random.uniform(size=1)[0] , epsilon)
@@ -73,9 +73,9 @@ class Q_transmit_agent():
         self.Q[current_energy, slient_time, priority, action] = self.Q[current_energy, slient_time, priority, action] + self.alpha * ( reward + self.gamma * (np.max(self.Q[next_energy, next_silence, next_priority, :])) - self.Q[current_energy, slient_time, priority, action])
         return
 
-    def step(self, state, reward, action,transmit_or_wait, new_state, epsilon):
+    def step(self, state, reward, action,transmit_or_wait, new_state, epsilon,p):
         self.Q_learn(state, reward, action, new_state)
-        new_action , new_transmit_or_wait = self.choose_action(new_state, epsilon)
+        new_action , new_transmit_or_wait = self.choose_action(new_state, epsilon,p)
         return new_action , new_transmit_or_wait
 
     def get_policy(self):

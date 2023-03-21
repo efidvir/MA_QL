@@ -13,6 +13,7 @@ import time
 import os, sys
 #os.environ["SDL_VIDEODRIVER"] = "dummy"
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 #plt.rcParams["figure.dpi"] = 300
 from matplotlib import colors
 #np.set_printoptions(threshold=sys.maxsize)
@@ -34,26 +35,27 @@ agent_type = 'Q_Learning'
 
 
 #Global parameters
-number_of_iterations = 1000000
-number_of_agents = 20
+number_of_iterations = 10000
+number_of_agents = 3
 np.random.seed(0)
 force_policy_flag = True
 #model
-MAX_SILENT_TIME = 40
+MAX_SILENT_TIME = 6
 SILENT_THRESHOLD = 0
-BATTERY_SIZE = 40
-MAX_IDLE_TIME = 20
-DISCHARGE = 19
-MINIMAL_CHARGE = 19
+BATTERY_SIZE = 6
+MAX_IDLE_TIME = 3
+DISCHARGE = 2
+MINIMAL_CHARGE = 2
 CHARGE = 1
 number_of_actions = 2
 
 #learning params
 GAMMA = 0.9
 ALPHA = 0.1
-alphas = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+alphas = [0.1,0.2]#,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+ps = [0.9,0.5,0.1]
 #P_LOSS = 0
-decay_rate = 0.99999
+decay_rate = 0.999
 
 #for rendering
 DATA_SIZE = 10
@@ -71,7 +73,7 @@ def run_simulation(number_of_iterations,decay_rate, number_of_agents,force_polic
     MINIMAL_CHARGE = DISCHARGE
     CHARGE = 1
     number_of_actions = 2
-
+    p=0.5
     # for rendering
     DATA_SIZE = 10
     '''run realtime experiences'''
@@ -110,7 +112,7 @@ def run_simulation(number_of_iterations,decay_rate, number_of_agents,force_polic
             agent[i] = AC_Agent(5*i*0.0000008, GAMMA, BATTERY_SIZE, MAX_SILENT_TIME, DATA_SIZE, number_of_actions,MINIMAL_CHARGE)
             print('Make sure to adjust the learning rate')
         state[i] = env[i].initial_state
-        actions[i] , transmit_or_wait_s[i] = agent[i].choose_action(state[i], epsilon[i])
+        actions[i] , transmit_or_wait_s[i] = agent[i].choose_action(state[i], epsilon[i],p)
         #policies[i] = agent[i].get_policy()
         #values[i] = agent[i].get_state_value(policies[i])
 
@@ -121,7 +123,7 @@ def run_simulation(number_of_iterations,decay_rate, number_of_agents,force_polic
     #plt.title('Reward function $r_1$')
     #plt.show(block=False)
     print('Final epsilon values:  ', epsilon)
-    print('r_1 array: ', env[0].r_1)
+    #print('r_1 array: ', env[0].r_1)
     bad_counter = np.zeros(number_of_agents)
     errors = [[] for i in range(number_of_agents)]
     resolution = 1
@@ -150,7 +152,7 @@ def run_simulation(number_of_iterations,decay_rate, number_of_agents,force_polic
             np.random.seed(j)
             #print('Agent ', j)
             #draw.render_Q_diffs(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j,i,env[j].state,actions[j], rewards[j], env[j].new_state)
-            actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j])
+            actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j],p)
             '''
             if epsilon[j] < 0.01:
                 if (rewards[j] == 0 and actions[j] == 1):
@@ -201,45 +203,49 @@ mat = [[] for i in range(len(hyper_sim_args))]
 max_mat = [[] for i in range(len(hyper_sim_args))]
 min_mat = [[] for i in range(len(hyper_sim_args))]
 avg_mat =  [[] for i in range(len(hyper_sim_args))]
+fig, ax = plt.subplots()
+ax = plt.axes(projection='3d')
 #for sims in range(len(hyper_sim_args)):
 avg_num=10
 if __name__ == '__main__':
-    mp.freeze_support()
-    for var in range(avg_num):
-        with Pool() as pool:
-            for index, results in enumerate(pool.starmap(run_simulation, hyper_sim_args)):
-                avg_rwrd, T = results
+    for p in ps:
+        mp.freeze_support()
+        for var in range(avg_num):
+            with Pool() as pool:
+                for index, results in enumerate(pool.starmap(run_simulation, hyper_sim_args)):
+                    avg_rwrd, T = results
 
-                if len(mat[index]) == 0:
-                    mat[index] = np.array(avg_rwrd[0])
-                    #max_mat[index] = np.array(avg_rwrd[0])
-                    #min_mat[index] = np.array(avg_rwrd[0])
-                    #avg_mat[index] = np.array(avg_rwrd[0])
-                else:
-                    mat[index] = np.vstack((mat[index], np.array(avg_rwrd[0])))
-                    # print(mat.shape(),avg_rwrd.shape())
+                    if len(mat[index]) == 0:
+                        mat[index] = np.array(avg_rwrd[0])
+                        #max_mat[index] = np.array(avg_rwrd[0])
+                        #min_mat[index] = np.array(avg_rwrd[0])
+                        #avg_mat[index] = np.array(avg_rwrd[0])
+                    else:
+                        mat[index] = np.vstack((mat[index], np.array(avg_rwrd[0])))
+                        # print(mat.shape(),avg_rwrd.shape())
 
 
-        print('AVG #',var, '-----------------------------')
+            print('AVG #',var, '-----------------------------')
 
-    #for tmp in range(len(hyper_sim_args)):
-    #    mat[tmp] = np.delete(mat[tmp], 0, axis=0)
-        #max_mat[tmp] = np.delete(max_mat[tmp], 0, axis=0)
-        #min_mat[tmp] = np.delete(min_mat[tmp], 0, axis=0)
-        #avg_mat[tmp] = np.delete(avg_mat[tmp], 0, axis=0)
-    for i in range(len(hyper_sim_args)):
-        max_mat[i] = np.amax(mat[i], axis=0)
-        min_mat[i] = np.amin(mat[i], axis=0)
-        avg_mat[i] = np.average(mat[i], axis=0)
-#surface_mat0 = np.vstack(avg_mat, axis=1)
-    print(np.array(avg_mat).shape)
-    X,Y = np.meshgrid(range(int(number_of_iterations/1000)),alphas)
-    fig, ax = plt.subplots()
-    ax = plt.axes(projection='3d')
-    ax.plot_surface(X, Y, np.array(avg_mat), alpha=0.3, label='p')
+        #for tmp in range(len(hyper_sim_args)):
+        #    mat[tmp] = np.delete(mat[tmp], 0, axis=0)
+            #max_mat[tmp] = np.delete(max_mat[tmp], 0, axis=0)
+            #min_mat[tmp] = np.delete(min_mat[tmp], 0, axis=0)
+            #avg_mat[tmp] = np.delete(avg_mat[tmp], 0, axis=0)
+        for i in range(len(hyper_sim_args)):
+            max_mat[i] = np.amax(mat[i], axis=0)
+            min_mat[i] = np.amin(mat[i], axis=0)
+            avg_mat[i] = np.average(mat[i], axis=0)
+    #surface_mat0 = np.vstack(avg_mat, axis=1)
+        print(np.array(avg_mat).shape)
+        X,Y = np.meshgrid(range(int(number_of_iterations/1000)),alphas)
+        ax.plot_surface(X, Y, np.array(avg_mat), alpha=0.3, label='p = {d}'.format(d=p))
+    print('P = ', p, '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
     ax.set_zlabel('Average reward')
     ax.set_ylabel('Learning rate')
     ax.set_xlabel('Number of iterations X1000')
+    legend_elements = [Patch(facecolor='blue',label='p = 0.9'),Patch(facecolor='green',label='p = 0.5'),Patch(facecolor='orange',label='p = 0.1')]
+    ax.legend(handles=legend_elements, loc='upper left')
     #plt.plot(range(len(avg_mat[0])), avg_mat[0])
     #plt.legend(range(number_of_agents))
     plt.show()
