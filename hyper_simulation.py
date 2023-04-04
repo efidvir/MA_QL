@@ -32,11 +32,17 @@ draw = render()
 #agent_type = 'Actor-Critic'
 agent_type = 'Q_Learning'
 
-
+#figx = pickle.load(open('FigureObject_3agents.fig.pickle', 'rb'))
+#ggg = figx.figure
+#dummy = plt.figure()
+#new_manager = dummy.canvas.manager
+#new_manager.canvas.figure = figx
+#figx.set_canvas(new_manager.canvas)
+#ggg.show() # Show the figure, edit it, etc.!
 
 #Global parameters
-number_of_iterations = 10000
-number_of_agents = 3
+number_of_iterations = 1000000
+number_of_agents = 10
 np.random.seed(0)
 force_policy_flag = True
 #model
@@ -44,7 +50,7 @@ MAX_SILENT_TIME = 6
 SILENT_THRESHOLD = 0
 BATTERY_SIZE = 6
 MAX_IDLE_TIME = 3
-DISCHARGE = 2
+DISCHARGE = 4
 MINIMAL_CHARGE = 2
 CHARGE = 1
 number_of_actions = 2
@@ -52,10 +58,10 @@ number_of_actions = 2
 #learning params
 GAMMA = 0.9
 ALPHA = 0.1
-alphas = [0.1,0.2]#,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+alphas = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9] #modolu number of cores
 ps = [0.9,0.5,0.1]
 #P_LOSS = 0
-decay_rate = 0.999
+decay_rate = 0.9999
 
 #for rendering
 DATA_SIZE = 10
@@ -89,7 +95,7 @@ def run_simulation(number_of_iterations,decay_rate, number_of_agents,force_polic
     #val_t = np.ndarray(shape=(number_of_iterations, number_of_agents, BATTERY_SIZE, MAX_SILENT_TIME))
 
     occupied = 0
-    epsilon = np.ones(number_of_agents)*0.5
+    epsilon = np.ones(number_of_agents)#*0.5
     print(epsilon)
     # initialize environment
     env = [[] for i in range(number_of_agents)]
@@ -122,7 +128,7 @@ def run_simulation(number_of_iterations,decay_rate, number_of_agents,force_polic
     #plt.xticks(range(env[0].max_silence_time))
     #plt.title('Reward function $r_1$')
     #plt.show(block=False)
-    print('Final epsilon values:  ', epsilon)
+    print('Initial epsilon values:  ', epsilon)
     #print('r_1 array: ', env[0].r_1)
     bad_counter = np.zeros(number_of_agents)
     errors = [[] for i in range(number_of_agents)]
@@ -180,7 +186,7 @@ def run_simulation(number_of_iterations,decay_rate, number_of_agents,force_polic
         draw.render_Q_diffs_video(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j,number_of_iterations)
     '''
 
-    print(epsilon)
+    print('Final epsilon values:  ',epsilon)
     # plt.plot(errors)
     #video.release()
     for a in range(number_of_agents):
@@ -203,8 +209,13 @@ mat = [[] for i in range(len(hyper_sim_args))]
 max_mat = [[] for i in range(len(hyper_sim_args))]
 min_mat = [[] for i in range(len(hyper_sim_args))]
 avg_mat =  [[] for i in range(len(hyper_sim_args))]
-fig, ax = plt.subplots()
-ax = plt.axes(projection='3d')
+fig = plt.figure()
+dummy = plt.figure()
+new_manager = dummy.canvas.manager
+new_manager.canvas.figure = fig
+fig.set_canvas(new_manager.canvas)
+
+ax = fig.add_subplot(projection='3d')
 #for sims in range(len(hyper_sim_args)):
 avg_num=10
 if __name__ == '__main__':
@@ -225,7 +236,7 @@ if __name__ == '__main__':
                         # print(mat.shape(),avg_rwrd.shape())
 
 
-            print('AVG #',var, '-----------------------------')
+            print( '-----------------------------','AVG #',var,' out of ',avg_num, '-----------------------------')
 
         #for tmp in range(len(hyper_sim_args)):
         #    mat[tmp] = np.delete(mat[tmp], 0, axis=0)
@@ -250,7 +261,7 @@ if __name__ == '__main__':
     #plt.legend(range(number_of_agents))
     plt.show()
 
-    pickle.dump(ax, open('FigureObject_test.fig.pickle', 'wb'))
+    pickle.dump(fig, open('FigureObject_10_rate4_1M.fig.pickle', 'wb'))
 #avg_rwrd, score, T, agent =
 '''
 #Agent evaluation

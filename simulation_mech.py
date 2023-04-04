@@ -33,7 +33,7 @@ draw = render()
 agent_type = 'Q_Learning'
 
 #Global parameters
-number_of_iterations = 1000000
+number_of_iterations = 1300000
 force_policy_flag = True
 number_of_agents = 9
 np.random.seed(0)
@@ -49,7 +49,7 @@ CHARGE = 1
 number_of_actions = 2
 p = 0.9
 #learning params
-GAMMA = 0.9
+GAMMA = 0.5
 ALPHA = 0.1
 #P_LOSS = 0
 decay_rate = 0.99999
@@ -126,6 +126,12 @@ for i in range(number_of_iterations):
     for j in range(number_of_agents):
         new_state, reward, occupied = env[j].time_step(actions[j], transmit_or_wait_s[j], sum(transmit_or_wait_s), ack)  # CHANNEL
         rewards[j] = reward
+        if (actions[j] and not rewards[j]) :
+            agent[j].behaviour = np.append(agent[j].behaviour, 1)
+        else:
+            agent[j].behaviour = np.append(agent[j].behaviour, 0)
+        if len(agent[j].behaviour) > 1000:
+            agent[j].behaviour = np.delete(agent[j].behaviour, 0)
 
         env[j].new_state = new_state
         score[j].append(reward)
@@ -135,6 +141,8 @@ for i in range(number_of_iterations):
         #print('Agent ', j)
         #draw.render_Q_diffs(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j,i,env[j].state,actions[j], rewards[j], env[j].new_state)
         actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j],p)
+        if i > number_of_iterations - 0.01 * number_of_iterations:
+            print(j, env[j].state,'->', env[j].new_state,rewards[j])
         '''
         if epsilon[j] < 0.01:
             if (rewards[j] == 0 and actions[j] == 1):
@@ -148,6 +156,8 @@ for i in range(number_of_iterations):
         print('step: ', i, '100 steps AVG mean score: ',np.mean(score[0][-1000:-1]),epsilon[0])
         if np.mean(score[0][-1000:-1]) > r_max:
             r_max = np.mean(score[0][-1000:-1])
+            for j in range(number_of_agents):
+                agent[j].saved_Q = agent[j].Q
 
         #if r_max == 1.0:
         #    epsilon = np.zeros(number_of_agents)
@@ -166,6 +176,14 @@ print(epsilon)
 # plt.plot(errors)
 #video.release()
 
+# Check who behaves well and who is bad and mark indicator good
+for j in range(number_of_agents):
+    agent[j].Q = agent[j].saved_Q
+    if sum(agent[j].behaviour) != 0:
+        agent[j].good = False
+
+for j in range(number_of_agents):
+    print(j, agent[j].good, sum(agent[j].behaviour))
 
 #Agent evaluation
 # No exploration
@@ -179,9 +197,17 @@ wasted = 0
 num_of_eval_iner = 1000000
 active =[]
 decay_rate = 0.99999
-re_explore = False
 count = 0
+i=0
+#freeze good agents
+epsilon = np.ones(number_of_agents)
+for a in range(number_of_agents):
+    agent[a].gamma = agent[a].gamma-0.1
+    if agent[a].good:
+        agent[a].alpha = 0
+        epsilon[a] = 0
 while i < num_of_eval_iner:
+
     #print(env[0].new_state,env[1].new_state,env[2].new_state)
     for a in range(number_of_agents):
         env[a].state = env[a].new_state
@@ -205,9 +231,23 @@ while i < num_of_eval_iner:
 
     for j in range(number_of_agents):
         new_state, reward, occupied = env[j].time_step(actions[j], transmit_or_wait_s[j], sum(transmit_or_wait_s), ack)  # CHANNEL
+        if actions[j] and not reward:
+            reward = -4.5
         rewards[j] = reward
         score[j].append(reward)
         env[j].new_state = new_state
+        if i > num_of_eval_iner - 0.01 * num_of_eval_iner:
+            print(j, env[j].state,'->', env[j].new_state,rewards[j])
+        if (actions[j] and not rewards[j]) :
+            agent[j].behaviour = np.append(agent[j].behaviour, 1)
+        else:
+            agent[j].behaviour = np.append(agent[j].behaviour, 0)
+        if len(agent[j].behaviour) > 1000:
+            agent[j].behaviour = np.delete(agent[j].behaviour, 0)
+        if sum(agent[j].behaviour) == 0:
+            agent[j].good = True
+        else:
+            agent[j].good = False
 
     for j in range(number_of_agents):
         np.random.seed(j)
@@ -221,8 +261,9 @@ while i < num_of_eval_iner:
         '''
         actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j],p)
 
-        if re_explore:
-            epsilon[j] = epsilon[j]*decay_rate
+
+        epsilon[j] = epsilon[j]*decay_rate
+        '''
         if i > 10000000:
             if len(active) == 3:
                 for c in active:
@@ -230,20 +271,28 @@ while i < num_of_eval_iner:
             else:
                 if actions[j] == 1:
                     active.append(j)
+        '''
+
     if i == num_of_eval_iner - 1:
         epsilon = np.zeros(number_of_agents)
 
-    if np.mean(score[0][-1000:-1]) < r_max and epsilon[0] == 0:
+    if np.mean(score[0][-1000:-1]) < r_max and epsilon.any() == 0:
         epsilon = np.ones(number_of_agents)#*0.1
-        re_explore = True
+        for a in range(number_of_agents):
+            if agent[a].good:
+                epsilon[a] = 0
+        if epsilon.all() == np.zeros(number_of_agents).all():
+            break
         i = 0
         count += 1
         #r_max = np.mean(score[0][-1000:-1])
 
     if i % 1000 == 0:
-        print(count, 'eval step: ', i, '100 steps AVG mean score: ',np.mean(score[0][-1000:-1]),'r_max:', r_max , epsilon[0])
+        print(count, 'eval step: ', i, '100 steps AVG mean score: ',np.mean(score[0][-1000:-1]),'r_max:', r_max , epsilon)
         if np.mean(score[0][-1000:-1]) > r_max:
             r_max = np.mean(score[0][-1000:-1])
+            for j in range(number_of_agents):
+                agent[j].saved_Q = agent[j].Q
     i += 1
     if state_transition_graph:
         # collect state transitions in T

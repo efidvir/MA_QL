@@ -22,6 +22,9 @@ class Q_transmit_agent():
         self.MINIMAL_CHARGE = MINIMAL_CHARGE
         self.seeder = RAND
         self.priority = 0
+        self.behaviour = []
+        self.good = True
+        self.saved_Q = np.zeros(shape=(battery_size, max_silence_time, max_idle_time, number_of_actions))
 
 
     def choose_action(self, state, epsilon,p):
