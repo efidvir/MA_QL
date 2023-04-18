@@ -43,7 +43,7 @@ number_of_cpu_cores = 40
 #Global parameters
 number_of_iterations = 100000
 number_of_agents = 10
-sweep_num_of_agents = [2,3]#np.linspace(2,number_of_cpu_cores+1,number_of_cpu_cores)
+sweep_num_of_agents = np.linspace(2,number_of_cpu_cores+1,number_of_cpu_cores)
 np.random.seed(0)
 force_policy_flag = True
 #model
@@ -199,7 +199,7 @@ def run_simulation(number_of_iterations,decay_rate, number_of_agents,force_polic
 def make_pool_parameters(iter):
     args = []
     for number_of_agents in iter:
-        DISCHARGE = number_of_agents
+        DISCHARGE = number_of_agents-1
         args.append((number_of_iterations,decay_rate, number_of_agents,force_policy_flag,DISCHARGE, GAMMA, ALPHA))
     return args
 
