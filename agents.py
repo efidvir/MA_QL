@@ -16,15 +16,16 @@ class Q_transmit_agent():
         self.data_size = data_size
         self.idle_time = max_idle_time
         self.number_of_actions = number_of_actions
-        self.Q = np.zeros(shape=(battery_size, max_silence_time, max_idle_time, number_of_actions))
-        self.state_visits = np.zeros(shape=(battery_size, max_silence_time, max_idle_time))
-        self.error = np.zeros(shape=(battery_size, max_silence_time,max_idle_time, number_of_actions))
+        self.Q = np.zeros(shape=(2, max_silence_time, max_idle_time, number_of_actions))
+        self.state_visits = np.zeros(shape=(2, max_silence_time, max_idle_time))
+        self.error = np.zeros(shape=(2, max_silence_time,max_idle_time, number_of_actions))
         self.MINIMAL_CHARGE = MINIMAL_CHARGE
         self.seeder = RAND
         self.priority = 0
         self.behaviour = []
         self.good = True
-        self.saved_Q = np.zeros(shape=(battery_size, max_silence_time, max_idle_time, number_of_actions))
+        self.saved_Q = np.zeros(shape=(2, max_silence_time, max_idle_time, number_of_actions))
+        self.energy = battery_size
 
 
     def choose_action(self, state, epsilon,p):
@@ -44,7 +45,7 @@ class Q_transmit_agent():
             action = np.argmax(self.Q[current_energy, slient_time, priority])  # Take the action that has the highest predicted Q value (0, 1)
 
         # Dont have energy for transmision#################################################
-        if current_energy < self.MINIMAL_CHARGE:
+        if current_energy == 0:
             action = 0
 
         transmit_prob = action / (self.number_of_actions - 1)

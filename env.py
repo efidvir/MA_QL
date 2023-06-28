@@ -35,16 +35,16 @@ class transmit_env(gym.Env):
 
         # state space
         self.state_space = spaces.Tuple((spaces.Discrete(self.max_silence_time), spaces.Discrete(self.battery_size), spaces.Discrete(self.max_idle_time)))
-        self.initial_energy = self.battery_size
+        self.initial_energy = 1
         self.initial_silence = 0
-        self.initial_state = [self.initial_energy - 1, self.initial_silence,self.initial_idle_time]
+        self.initial_state = [1, self.initial_silence,self.initial_idle_time]
         self.state = self.initial_state
         self.new_state = self.initial_state
 
         # Screen size of data
         #self.screen = pygame.display.set_mode((data_size * 100, 100))
 
-    def time_step(self, action,transmit_or_wait, channel, ack ):
+    def time_step(self, action,transmit_or_wait, channel, ack ,energy ):
         # take action accoring to policy (epsilon-greedy) and get reward and next state
         #######################################################
         current_energy, silent_time, idle_time = self.state
@@ -57,10 +57,10 @@ class transmit_env(gym.Env):
 
         if transmit_or_wait == 1:  # agent choose to transmit and discharge
             idle_time = 0
-            if current_energy < self.minimal_charge:
+            if energy < self.minimal_charge:
                 raise ValueError('No charge left, can not transmit')
             else:
-                current_energy -= self.discharge_rate
+                energy -= self.discharge_rate
 
 
             if channel > 1:  # Someone else transmited along with agent - collision
@@ -76,8 +76,8 @@ class transmit_env(gym.Env):
                 #    raise ValueError('Gateway not responding')
 
         else:  # agent choose to wait and charge
-            if current_energy < self.battery_size - 1:  # capp battery
-                current_energy += self.charge_rate
+            if energy < self.battery_size - 1:  # capp battery
+                energy += self.charge_rate
                 idle_time = 0
             else:
                 if idle_time < self.max_idle_time -1:
@@ -99,6 +99,10 @@ class transmit_env(gym.Env):
         else:
             occupied = 1
             #reward -= 1
+        if energy > self.minimal_charge:
+            current_energy = 1
+        else:
+            current_energy = 0
 
 
 
@@ -107,7 +111,7 @@ class transmit_env(gym.Env):
         # compose new state
         new_state = [current_energy, silent_time, idle_time]
 
-        return new_state, reward, occupied
+        return new_state, reward, occupied, energy
 
     def reset():  ################################################## EPISODIC NOT IMPLEMENTED - PURE ONLINE
         return

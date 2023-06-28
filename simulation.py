@@ -35,19 +35,19 @@ agent_type = 'Q_Learning'
 #Global parameters
 number_of_iterations = 1000000
 force_policy_flag = True
-number_of_agents = 9
+number_of_agents = 10
 np.random.seed(0)
 
 #model
-MAX_SILENT_TIME = 18
-SILENT_THRESHOLD = 0
-BATTERY_SIZE = 18
-MAX_IDLE_TIME = 9
-DISCHARGE = 4
-MINIMAL_CHARGE = 4
+MAX_SILENT_TIME = 1
+SILENT_THRESHOLD =0
+BATTERY_SIZE = 20
+MAX_IDLE_TIME = 1
+DISCHARGE = 9
+MINIMAL_CHARGE = 9
 CHARGE = 1
 number_of_actions = 2
-p = 0.9
+p = 0.5
 #learning params
 GAMMA = 0.9
 ALPHA = 0.1
@@ -124,7 +124,7 @@ for i in range(number_of_iterations):
         ack = 1
 
     for j in range(number_of_agents):
-        new_state, reward, occupied = env[j].time_step(actions[j], transmit_or_wait_s[j], sum(transmit_or_wait_s), ack)  # CHANNEL
+        new_state, reward, occupied ,agent[j].energy = env[j].time_step(actions[j], transmit_or_wait_s[j], sum(transmit_or_wait_s), ack ,agent[j].energy)  # CHANNEL
         rewards[j] = reward
 
         env[j].new_state = new_state
@@ -176,12 +176,12 @@ data = []
 collisions = 0
 agent_clean = [np.zeros(1) for i in range(number_of_agents)]
 wasted = 0
-num_of_eval_iner = 1000000
+num_of_eval_iner = 1000
 active =[]
-decay_rate = 0.99999
+decay_rate = 0.99
 re_explore = False
 count = 0
-while i < num_of_eval_iner:
+for i in range(num_of_eval_iner):
     #print(env[0].new_state,env[1].new_state,env[2].new_state)
     for a in range(number_of_agents):
         env[a].state = env[a].new_state
@@ -204,7 +204,7 @@ while i < num_of_eval_iner:
         data.append(0)
 
     for j in range(number_of_agents):
-        new_state, reward, occupied = env[j].time_step(actions[j], transmit_or_wait_s[j], sum(transmit_or_wait_s), ack)  # CHANNEL
+        new_state, reward, occupied ,agent[j].energy = env[j].time_step(actions[j], transmit_or_wait_s[j], sum(transmit_or_wait_s), ack ,agent[j].energy)  # CHANNEL
         rewards[j] = reward
         score[j].append(reward)
         env[j].new_state = new_state
@@ -220,7 +220,7 @@ while i < num_of_eval_iner:
             epsilon[0] = 0
         '''
         actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j],p)
-
+        '''
         if re_explore:
             epsilon[j] = epsilon[j]*decay_rate
         if i > 10000000:
@@ -230,21 +230,21 @@ while i < num_of_eval_iner:
             else:
                 if actions[j] == 1:
                     active.append(j)
-    if i == num_of_eval_iner - 1:
+        if i == num_of_eval_iner - 1:
         epsilon = np.zeros(number_of_agents)
-
+   
     if np.mean(score[0][-1000:-1]) < r_max and epsilon[0] == 0:
         epsilon = np.ones(number_of_agents)#*0.1
         re_explore = True
-        i = 0
+        #i = 0
         count += 1
         #r_max = np.mean(score[0][-1000:-1])
-
+    '''
     if i % 1000 == 0:
         print(count, 'eval step: ', i, '100 steps AVG mean score: ',np.mean(score[0][-1000:-1]),'r_max:', r_max , epsilon[0])
         if np.mean(score[0][-1000:-1]) > r_max:
             r_max = np.mean(score[0][-1000:-1])
-    i += 1
+    #i += 1
     if state_transition_graph:
         # collect state transitions in T
         for j in range(number_of_agents):
@@ -272,12 +272,12 @@ print('wasted', wasted)
 
 #print(data)
 #if evaluation_slots:
-#    draw.last_1k_slots(data, number_of_agents)
-'''
-for i in range(number_of_agents):
-    print('Agent ', i)
-    print('\n')
+draw.last_1k_slots(data, number_of_agents)
 
+for i in range(number_of_agents):
+    print('Agent ', i, env[i].discharge_rate )
+    print('\n')
+'''
     #draw.plot_Q_values(Q_tables,number_of_iterations)
 
 for i in range(number_of_agents):
