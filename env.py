@@ -76,7 +76,7 @@ class transmit_env(gym.Env):
                 #    raise ValueError('Gateway not responding')
 
         else:  # agent choose to wait and charge
-            if energy < self.battery_size - 1:  # capp battery
+            if energy < self.battery_size :  # capp battery
                 energy += self.charge_rate
                 idle_time = 0
             else:

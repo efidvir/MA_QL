@@ -60,8 +60,8 @@ class render():
             plt.plot(range(number_of_iterations), tables_array[i,])
         plt.show()
 
-    def render_Q_diffs(self, Q1, Q2, agent_num,iteration,state, action, reward, next_state):
-        path = 'C:/Users/dvire/PycharmProjects/MA_QL/images/'
+    def render_Q_diffs(self, Q1, Q2, agent_num,iteration,state, action, reward, next_state, energy):
+        path = 'C:/Users/EFI/PycharmProjects/MA_QL/binary/'
         screen = pygame.display.set_mode((Q1.shape[0] * 100, Q1.shape[1] * 100))
         diff = (Q1 - Q2)
         diff_pos = diff - np.min(diff)  # shift to posetive
@@ -69,8 +69,8 @@ class render():
         if max == 0:
             max = 1
         color = diff_pos / max * 255
-        current_energy, slient_time = state
-        next_energy, next_slient_time = next_state
+        current_energy, slient_time , idle_time= state
+        next_energy, next_slient_time , next_idle = next_state
         #print('Difference Q1 - Q2 (wait - transmit)')
         for i in range(Q1.shape[0]):
             for j in range(Q1.shape[1]):
@@ -107,20 +107,22 @@ class render():
                                   (0, 255, 255), 1, cv2.LINE_AA)
                 img = cv2.putText(img, "Q2 = %.3f" % Q2[i, j], (i * 100, j * 100 + 90), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                                   (0, 255, 255), 1, cv2.LINE_AA)
+        img = cv2.putText(img, "%d" % energy, (70, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                          (0, 255, 255), 1, cv2.LINE_AA)
+
 
         img = cv2.arrowedLine(img, start_point, end_point, (128, 255, 128), 3)
         img = cv2.putText(img, "a=%d" % action, (int((start_point[0] +end_point[0])/2),int((start_point[1] +end_point[1])/2)) , cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                           (255, 0, 255), 2, cv2.LINE_AA)
         img = cv2.putText(img, "r=%d" % reward, (int((start_point[0] +end_point[0])/2),int((start_point[1] +end_point[1])/2)+20) , cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                           (255, 128, 255), 2, cv2.LINE_AA)
-
                 # img_bgr = cv2.putText(img_bgr, "%.3f" % value[i,j], (i*100,j*100+20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
         # else:
         #  img = cv2.putText(img_bgr, "Wait", (i*100,j*100+80), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
         #cv2.imshow('Q DIffs agent{d}'.format(d=agent_num),img)
-        img = img[0:Q1.shape[0] * 100, 0:Q1.shape[1] * 100]
+        #img = img[0:Q1.shape[0] * 100, 0:Q1.shape[1] * 100]
         path = os.path.join(path, 'agent{d}'.format(d=agent_num))
-        cv2.imwrite(os.path.join(path , 'Q_DIffs_agent{d}_{e}.jpg'.format(d=agent_num, e = iteration)), img)
+        cv2.imwrite(os.path.join(path , 'Q_DIffs_agent{d}_{e}.jpg'.format(d=agent_num, e = iteration)), img,  [int(cv2.IMWRITE_PNG_COMPRESSION),9])
         #out = cv2.VideoWriter('Q_DIffs_agent{d}.avi'.format(d=agent_num), cv2.VideoWriter_fourcc(*'DIVX'),10,(Q1.shape[0] * 100, Q1.shape[1] * 100))
         #out.write(img)
         #out.release()
@@ -178,7 +180,8 @@ class render():
 
 
     def render_Q_diffs_video(self, Q1, Q2, agent_num,nummber_of_iterations):
-        path = 'C:/Users/dvire/PycharmProjects/MA_QL/images/'
+        path = 'C:/Users/EFI/PycharmProjects/MA_QL/binary/'
+
         path = os.path.join(path, 'agent{d}'.format(d=agent_num))
         out = cv2.VideoWriter('Q_DIffs_agent{d}.avi'.format(d=agent_num), cv2.VideoWriter_fourcc(*'DIVX'), 30,(Q1.shape[0] * 100, Q1.shape[1] * 100))
         for iter in range(nummber_of_iterations):

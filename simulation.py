@@ -33,18 +33,18 @@ draw = render()
 agent_type = 'Q_Learning'
 
 #Global parameters
-number_of_iterations = 1000000
+number_of_iterations = 10000
 force_policy_flag = True
-number_of_agents = 10
+number_of_agents = 9
 np.random.seed(0)
 
 #model
 MAX_SILENT_TIME = 1
 SILENT_THRESHOLD =0
-BATTERY_SIZE = 20
+BATTERY_SIZE = 18
 MAX_IDLE_TIME = 1
-DISCHARGE = 9
-MINIMAL_CHARGE = 9
+DISCHARGE = 4
+MINIMAL_CHARGE = 4
 CHARGE = 1
 number_of_actions = 2
 p = 0.5
@@ -52,7 +52,7 @@ p = 0.5
 GAMMA = 0.9
 ALPHA = 0.1
 #P_LOSS = 0
-decay_rate = 0.99999
+decay_rate = 0.999
 
 #for rendering
 DATA_SIZE = 10
@@ -83,6 +83,7 @@ score = [[] for i in range(number_of_agents)]
 RAND = [[np.random.randint(10000)] for i in range(number_of_agents)]
 rewards = [[] for i in range(number_of_agents)]
 avg_rwrd = [[] for i in range(number_of_agents)]
+energy = [[] for i in range(number_of_agents)]
 r_max = 0
 for i in range(number_of_agents):
     #epsilon[i] = epsilon[i] -1/(number_of_agents+i)
@@ -124,6 +125,7 @@ for i in range(number_of_iterations):
         ack = 1
 
     for j in range(number_of_agents):
+        energy[j].append(agent[j].energy)
         new_state, reward, occupied ,agent[j].energy = env[j].time_step(actions[j], transmit_or_wait_s[j], sum(transmit_or_wait_s), ack ,agent[j].energy)  # CHANNEL
         rewards[j] = reward
 
@@ -133,7 +135,7 @@ for i in range(number_of_iterations):
     for j in range(number_of_agents):
         np.random.seed(j)
         #print('Agent ', j)
-        #draw.render_Q_diffs(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j,i,env[j].state,actions[j], rewards[j], env[j].new_state)
+        draw.render_Q_diffs(agent[j].Q[:, :,:, 0], agent[j].Q[:, :, :, 1], j,i,env[j].state,actions[j], rewards[j], env[j].new_state,agent[j].energy)
         actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j],p)
         '''
         if epsilon[j] < 0.01:
@@ -156,11 +158,11 @@ for i in range(number_of_iterations):
 
 #draw.render_q_by_agent(Qs,number_of_agents)
 
-'''
+
 for j in range(number_of_agents):
     print('video done')
-    draw.render_Q_diffs_video(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j,number_of_iterations)
-'''
+    draw.render_Q_diffs_video(agent[j].Q[:, :,:, 0], agent[j].Q[:, :, :, 1], j,number_of_iterations)
+
 
 print(epsilon)
 # plt.plot(errors)
@@ -213,6 +215,7 @@ for i in range(num_of_eval_iner):
         np.random.seed(j)
         #print('Agent ', j)
         #draw.render_Q_diffs(agent[j].Q[:, :, 0], agent[j].Q[:, :, 1], j,i,env[j].state,actions[j], rewards[j], env[j].new_state)
+        print(j,": ", env[j].state, "|", actions[j])
         '''
         if i == 10:
             epsilon[0] = 1
@@ -269,6 +272,12 @@ for a in range(number_of_agents):
 plt.legend(range(number_of_agents))
 plt.show()
 print('wasted', wasted)
+
+plt.figure(2)
+for a in range(number_of_agents):
+    plt.plot(range(number_of_iterations), energy[a])
+#plt.legend(range(number_of_agents))
+plt.show()
 
 #print(data)
 #if evaluation_slots:
