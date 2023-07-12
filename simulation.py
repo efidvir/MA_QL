@@ -33,18 +33,18 @@ draw = render()
 agent_type = 'Q_Learning'
 
 #Global parameters
-number_of_iterations = 10000
+number_of_iterations = 100000
 force_policy_flag = True
-number_of_agents = 9
+number_of_agents = 3
 np.random.seed(0)
 
 #model
 MAX_SILENT_TIME = 1
 SILENT_THRESHOLD =0
-BATTERY_SIZE = 18
+BATTERY_SIZE = 6
 MAX_IDLE_TIME = 1
-DISCHARGE = 4
-MINIMAL_CHARGE = 4
+DISCHARGE = 2
+MINIMAL_CHARGE = 2
 CHARGE = 1
 number_of_actions = 2
 p = 0.5
@@ -52,7 +52,7 @@ p = 0.5
 GAMMA = 0.9
 ALPHA = 0.1
 #P_LOSS = 0
-decay_rate = 0.999
+decay_rate = 0.9999
 
 #for rendering
 DATA_SIZE = 10
@@ -135,7 +135,7 @@ for i in range(number_of_iterations):
     for j in range(number_of_agents):
         np.random.seed(j)
         #print('Agent ', j)
-        draw.render_Q_diffs(agent[j].Q[:, :,:, 0], agent[j].Q[:, :, :, 1], j,i,env[j].state,actions[j], rewards[j], env[j].new_state,agent[j].energy)
+        #draw.render_Q_diffs(agent[j].Q[:, :,:, 0], agent[j].Q[:, :, :, 1], j,i,env[j].state,actions[j], rewards[j], env[j].new_state,agent[j].energy)
         actions[j], transmit_or_wait_s[j] = agent[j].step(env[j].state, rewards[j], actions[j], transmit_or_wait_s[j], env[j].new_state, epsilon[j],p)
         '''
         if epsilon[j] < 0.01:
@@ -159,9 +159,9 @@ for i in range(number_of_iterations):
 #draw.render_q_by_agent(Qs,number_of_agents)
 
 
-for j in range(number_of_agents):
-    print('video done')
-    draw.render_Q_diffs_video(agent[j].Q[:, :,:, 0], agent[j].Q[:, :, :, 1], j,number_of_iterations)
+#for j in range(number_of_agents):
+#    print('video done')
+#    draw.render_Q_diffs_video(agent[j].Q[:, :,:, 0], agent[j].Q[:, :, :, 1], j,number_of_iterations)
 
 
 print(epsilon)
